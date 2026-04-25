@@ -1,9 +1,11 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 /// <summary>
 /// Orthographic camera that orbits a fixed point on a circular track.
-/// Right-click drag rotates around the Y axis; elevation and distance are fixed.
+/// Right-click drag rotates around the Y axis; scroll wheel zooms.
+/// PanTargetTo() smoothly moves the orbit target (used for floor transitions).
 /// </summary>
 [RequireComponent(typeof(Camera))]
 public class OrbitCamera : MonoBehaviour
@@ -12,7 +14,7 @@ public class OrbitCamera : MonoBehaviour
     public Vector3 target = Vector3.zero;
 
     [Header("Orbit")]
-    [Tooltip("Distance from the target point along the horizontal plane.")]
+    [Tooltip("Distance from the target point.")]
     public float distance = 14f;
 
     [Tooltip("Degrees above the horizon (30 = classic isometric).")]
@@ -34,9 +36,10 @@ public class OrbitCamera : MonoBehaviour
 
     // ── private ───────────────────────────────────────────────────────────────
 
-    private float _angle;       // current Y-axis rotation in degrees
-    private float _currentSize; // current orthographic size
-    private Camera _cam;
+    private float      _angle;
+    private float      _currentSize;
+    private Camera     _cam;
+    private Coroutine  _panCoroutine;
 
     // ── lifecycle ─────────────────────────────────────────────────────────────
 
@@ -67,6 +70,38 @@ public class OrbitCamera : MonoBehaviour
         }
     }
 
+    // ── pan API ───────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Smoothly moves the orbit target to <paramref name="destination"/> over
+    /// <paramref name="duration"/> seconds, shaped by <paramref name="curve"/>.
+    /// Any in-progress pan is cancelled and replaced.
+    /// </summary>
+    public void PanTargetTo(Vector3 destination, float duration, AnimationCurve curve)
+    {
+        if (_panCoroutine != null) StopCoroutine(_panCoroutine);
+        _panCoroutine = StartCoroutine(PanRoutine(destination, duration, curve));
+    }
+
+    IEnumerator PanRoutine(Vector3 destination, float duration, AnimationCurve curve)
+    {
+        Vector3 start   = target;
+        float   elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t  = curve.Evaluate(Mathf.Clamp01(elapsed / duration));
+            target   = Vector3.Lerp(start, destination, t);
+            ApplyTransform();
+            yield return null;
+        }
+
+        target        = destination;
+        _panCoroutine = null;
+        ApplyTransform();
+    }
+
     // ── position math ─────────────────────────────────────────────────────────
 
     void ApplyTransform()
@@ -74,8 +109,8 @@ public class OrbitCamera : MonoBehaviour
         float yRad    = _angle * Mathf.Deg2Rad;
         float elevRad = elevationDeg * Mathf.Deg2Rad;
 
-        float hDist = distance * Mathf.Cos(elevRad);   // horizontal component
-        float vDist = distance * Mathf.Sin(elevRad);   // vertical component
+        float hDist = distance * Mathf.Cos(elevRad);
+        float vDist = distance * Mathf.Sin(elevRad);
 
         Vector3 offset = new Vector3(
             hDist * Mathf.Sin(yRad),

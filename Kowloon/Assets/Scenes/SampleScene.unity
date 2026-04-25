@@ -119,6 +119,77 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &90098955
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 90098957}
+  - component: {fileID: 90098956}
+  m_Layer: 0
+  m_Name: FloorManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &90098956
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 90098955}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f5f8ebdba55d57488f44c0565832c84, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  grid: {fileID: 415719699}
+  orbitCamera: {fileID: 330585548}
+  panDuration: 0.6
+  panCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+--- !u!4 &90098957
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 90098955}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!21 &106223975
 Material:
   serializedVersion: 8
@@ -136,8 +207,10 @@ Material:
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
+  stringTagMap:
+    RenderType: Opaque
+  disabledShaderPasses:
+  - MOTIONVECTORS
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
@@ -169,7 +242,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 0.12, g: 0.12, b: 0.14, a: 1}
-    - _Color: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    - _Color: {r: 0.11999995, g: 0.11999995, b: 0.13999996, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
 --- !u!1 &330585543
@@ -328,7 +401,7 @@ MonoBehaviour:
   startAngleDeg: 45
   sensitivity: 0.4
   orthoSize: 6
-  zoomSpeed: 10
+  zoomSpeed: 100
   zoomMin: 2
   zoomMax: 14
 --- !u!1 &410087039
@@ -487,9 +560,6 @@ MonoBehaviour:
   emptyHeight: 0.08
   placedHeight: 0.4
   emptyColor: {r: 0.18, g: 0.18, b: 0.22, a: 1}
-  hoverValid: {r: 0.4, g: 0.8, b: 0.45, a: 1}
-  hoverInvalid: {r: 0.8, g: 0.28, b: 0.28, a: 1}
-  placedColor: {r: 0.65, g: 0.55, b: 0.42, a: 1}
 --- !u!4 &415719700
 Transform:
   m_ObjectHideFlags: 0
@@ -663,6 +733,64 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1838939323
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1838939325}
+  - component: {fileID: 1838939324}
+  m_Layer: 0
+  m_Name: TilePlacer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1838939324
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1838939323}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 31163667919577040a9f5c653eb3ec93, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  grid: {fileID: 0}
+  floorManager: {fileID: 90098956}
+  availableTiles:
+  - {fileID: 11400000, guid: 155296910202839418601f7036fa1577, type: 2}
+  - {fileID: 11400000, guid: dbcb718519a286f4f9b8fac6c2c7244c, type: 2}
+  - {fileID: 11400000, guid: 6c16b1fc33ebce24fb6e36a765e304e2, type: 2}
+  - {fileID: 11400000, guid: 1cc96f5b7fef547499cfc3560d55a181, type: 2}
+  - {fileID: 11400000, guid: bd94930e943387341863183d35a63e4b, type: 2}
+  - {fileID: 11400000, guid: b8706ad714410004f8be8b865a97d16d, type: 2}
+  - {fileID: 11400000, guid: b43594322dbf4ff4bbbd19b37eb6d606, type: 2}
+  stairTile: {fileID: 11400000, guid: 3c1a7ca3dec3ebf469112a845f8e50b2, type: 2}
+  validColor: {r: 0.4, g: 0.8, b: 0.45, a: 1}
+  invalidColor: {r: 0.8, g: 0.28, b: 0.28, a: 1}
+  anchorWhiteLerp: 0.35
+--- !u!4 &1838939325
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1838939323}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -672,3 +800,5 @@ SceneRoots:
   - {fileID: 832575519}
   - {fileID: 415719700}
   - {fileID: 738224378}
+  - {fileID: 1838939325}
+  - {fileID: 90098957}

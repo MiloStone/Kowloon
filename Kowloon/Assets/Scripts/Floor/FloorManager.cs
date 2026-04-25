@@ -1,0 +1,49 @@
+using UnityEngine;
+
+/// <summary>
+/// Coordinates floor transitions: increments the floor counter, moves the grid
+/// up, clears occupied state, and triggers the camera pan.
+/// </summary>
+public class FloorManager : MonoBehaviour
+{
+    [Header("References")]
+    public GridManager  grid;
+    public OrbitCamera  orbitCamera;
+
+    [Header("Transition")]
+    [Tooltip("Duration of the camera pan in seconds.")]
+    public float         panDuration = 0.6f;
+    [Tooltip("Ease curve for the camera pan. Default is smooth ease-in-out.")]
+    public AnimationCurve panCurve;
+
+    public int CurrentFloor { get; private set; } = 1;
+
+    // ── lifecycle ─────────────────────────────────────────────────────────────
+
+    void Reset()
+    {
+        // Called when component is first added — provides a sensible default curve
+        panCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+    }
+
+    void Awake()
+    {
+        if (grid        == null) grid        = FindFirstObjectByType<GridManager>();
+        if (orbitCamera == null) orbitCamera = FindFirstObjectByType<OrbitCamera>();
+
+        if (panCurve == null || panCurve.length == 0)
+            panCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+    }
+
+    // ── public API ────────────────────────────────────────────────────────────
+
+    public void CompleteFloor()
+    {
+        CurrentFloor++;
+        float newY = (CurrentFloor - 1) * grid.PlacedHeight;
+
+        grid.MoveTo(newY);
+        grid.ClearOccupied();
+        orbitCamera.PanTargetTo(new Vector3(0f, newY, 0f), panDuration, panCurve);
+    }
+}
