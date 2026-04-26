@@ -43,10 +43,16 @@ public class TilePlacer : MonoBehaviour
     public AudioClip placeChime;
     [Tooltip("Volume for the place chime.")]
     [Range(0f, 1f)] public float placeChimeVolume = 1f;
-    [Tooltip("Major-scale degrees the chime randomly hits (1-indexed).")]
-    public int[] pentatonicDegrees = { 1, 2, 3, 5, 6 };
-    private AudioSource _audio;
-    private int         _lastDegree = -1;
+    [Tooltip("Semitone offsets from the chime's native pitch. Defaults to a major " +
+             "pentatonic scale (root, +2, +4, +7, +9). Half-steps allowed " +
+             "(e.g. 1.5 for a quarter-tone, 1 for a flat-2).")]
+    public float[] pitchSemitones = { 0f, 2f, 4f, 7f, 9f };
+    [Tooltip("Most recent picks blocked from re-rolling. 2 = no note can repeat " +
+             "until two other notes have played.")]
+    [Range(0, 4)] public int pitchCooldown = 2;
+
+    private AudioSource         _audio;
+    private readonly Queue<float> _recentSemitones = new();
 
     // ── runtime state ─────────────────────────────────────────────────────────
 
@@ -73,19 +79,36 @@ public class TilePlacer : MonoBehaviour
     void PlayPlaceChime()
     {
         if (placeChime == null || _audio == null) return;
-        // Major-scale degree → semitone offset from root.
-        // 1=0, 2=2, 3=4, 4=5, 5=7, 6=9, 7=11.
-        int[] semis = { 0, 2, 4, 5, 7, 9, 11 };
-        int   deg;
-        if (pentatonicDegrees.Length <= 1)
-            deg = pentatonicDegrees[0];
-        else
-            do { deg = pentatonicDegrees[Random.Range(0, pentatonicDegrees.Length)]; }
-            while (deg == _lastDegree);
-        _lastDegree = deg;
-        int   s     = (deg >= 1 && deg <= 7) ? semis[deg - 1] : 0;
-        _audio.pitch  = Mathf.Pow(2f, s / 12f);
+        if (pitchSemitones == null || pitchSemitones.Length == 0) return;
+
+        // Reroll until the pick isn't in the recent-cooldown window. If the
+        // cooldown leaves no valid picks (small set + large cooldown), fall
+        // back to allowing anything other than the most recent.
+        int   maxBlocked = Mathf.Min(pitchCooldown, pitchSemitones.Length - 1);
+        float pick;
+        int   tries = 0;
+        do {
+            pick = pitchSemitones[Random.Range(0, pitchSemitones.Length)];
+            if (++tries > 64) break;
+        } while (IsBlocked(pick, maxBlocked));
+
+        _recentSemitones.Enqueue(pick);
+        while (_recentSemitones.Count > maxBlocked) _recentSemitones.Dequeue();
+
+        _audio.pitch = Mathf.Pow(2f, pick / 12f);
         _audio.PlayOneShot(placeChime, placeChimeVolume);
+    }
+
+    bool IsBlocked(float semis, int blockCount)
+    {
+        if (blockCount <= 0) return false;
+        int seen = 0;
+        foreach (var r in _recentSemitones)
+        {
+            if (Mathf.Approximately(r, semis)) return true;
+            if (++seen >= blockCount) break;
+        }
+        return false;
     }
 
     void Start() => PickNextTile();
