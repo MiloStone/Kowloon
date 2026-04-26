@@ -46,9 +46,9 @@ public class FloorManager : MonoBehaviour
 
         if (panCurve == null || panCurve.length == 0)
             panCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
-    }
 
-    void Start() => RollScenario();
+        RollScenario();
+    }
 
     // ── public API ────────────────────────────────────────────────────────────
 
