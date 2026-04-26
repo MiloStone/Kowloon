@@ -149,6 +149,37 @@ public static class TileMeshBuilder
         return MakeMesh("TileBody", bv, bt);
     }
 
+    /// <summary>Inward-facing floor: same footprint as the top cap but at y=0 with +Y normal.</summary>
+    public static Mesh BuildFloor(
+        Vector2Int[] cells, float cellSize, float cellGap, float placedHeight)
+    {
+        float step    = cellSize + cellGap;
+        var   cellSet = new HashSet<Vector2Int>(cells);
+        var   fv      = new List<Vector3>();
+        var   ft      = new List<int>();
+
+        foreach (var c in cells)
+        {
+            float cx = c.x * step;
+            float cz = c.y * step;
+            bool hasL = cellSet.Contains(new(c.x - 1, c.y));
+            bool hasR = cellSet.Contains(new(c.x + 1, c.y));
+            bool hasB = cellSet.Contains(new(c.x, c.y - 1));
+            bool hasF = cellSet.Contains(new(c.x, c.y + 1));
+
+            float x0 = cx - cellSize * 0.5f - (hasL ? cellGap * 0.5f : 0f);
+            float x1 = cx + cellSize * 0.5f + (hasR ? cellGap * 0.5f : 0f);
+            float z0 = cz - cellSize * 0.5f - (hasB ? cellGap * 0.5f : 0f);
+            float z1 = cz + cellSize * 0.5f + (hasF ? cellGap * 0.5f : 0f);
+
+            // +Y winding (same vertex order as top cap, just at y=0).
+            AddQuad(fv, ft,
+                new(x1, 0, z0), new(x1, 0, z1), new(x0, 0, z1), new(x0, 0, z0));
+        }
+
+        return MakeMesh("TileFloor", fv, ft);
+    }
+
     public static Mesh BuildTop(
         Vector2Int[] cells, float cellSize, float cellGap, float placedHeight)
     {
@@ -190,6 +221,19 @@ public static class TileMeshBuilder
         };
         var t = new List<int> { 0, 1, 2, 0, 2, 3 };
         return MakeMesh("DoorOverlayQuad", v, t);
+    }
+
+    /// <summary>Unit quad in the XZ plane with +Y normal. Used for door preview indicators.</summary>
+    public static Mesh BuildUnitQuadXZ()
+    {
+        var v = new List<Vector3> {
+            new( 0.5f, 0f, -0.5f),
+            new( 0.5f, 0f,  0.5f),
+            new(-0.5f, 0f,  0.5f),
+            new(-0.5f, 0f, -0.5f),
+        };
+        var t = new List<int> { 0, 1, 2, 0, 2, 3 };
+        return MakeMesh("DoorIndicatorQuad", v, t);
     }
 
     static Mesh MakeMesh(string meshName, List<Vector3> verts, List<int> tris)

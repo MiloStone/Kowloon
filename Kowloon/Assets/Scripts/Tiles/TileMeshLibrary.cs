@@ -19,15 +19,18 @@ public class TileMeshLibrary : MonoBehaviour
     public Material TopMaterial     { get; private set; }
     public Material OverlayMaterial { get; private set; }
     public Mesh     OverlayQuad     { get; private set; }
+    public Mesh     IndicatorQuad   { get; private set; }
 
-    private readonly Dictionary<TileDefinition, Mesh>          _topCache  = new();
-    private readonly Dictionary<(TileDefinition, ulong), Mesh> _bodyCache = new();
+    private readonly Dictionary<TileDefinition, Mesh>          _topCache   = new();
+    private readonly Dictionary<TileDefinition, Mesh>          _floorCache = new();
+    private readonly Dictionary<(TileDefinition, ulong), Mesh> _bodyCache  = new();
 
     void Awake()
     {
         if (grid == null) grid = FindFirstObjectByType<GridManager>();
         BuildSharedMaterials();
-        OverlayQuad = TileMeshBuilder.BuildUnitQuad();
+        OverlayQuad   = TileMeshBuilder.BuildUnitQuad();
+        IndicatorQuad = TileMeshBuilder.BuildUnitQuadXZ();
 
         // Pre-warm top meshes (cheap; door-independent).
         foreach (var def in tileDefinitions) GetTopMesh(def);
@@ -75,6 +78,15 @@ public class TileMeshLibrary : MonoBehaviour
         if (_topCache.TryGetValue(def, out var m)) return m;
         m = TileMeshBuilder.BuildTop(def.cells, grid.CellSize, grid.CellGap, grid.PlacedHeight);
         _topCache[def] = m;
+        return m;
+    }
+
+    public Mesh GetFloorMesh(TileDefinition def)
+    {
+        if (def == null) return null;
+        if (_floorCache.TryGetValue(def, out var m)) return m;
+        m = TileMeshBuilder.BuildFloor(def.cells, grid.CellSize, grid.CellGap, grid.PlacedHeight);
+        _floorCache[def] = m;
         return m;
     }
 
@@ -129,7 +141,7 @@ public class TileMeshLibrary : MonoBehaviour
         mr.sharedMaterial = OverlayMaterial;
 
         var mpb = new MaterialPropertyBlock();
-        mpb.SetColor("_BaseColor", Color.Lerp(tileColor, Color.black, 0.45f));
+        mpb.SetColor("_BaseColor", Color.Lerp(tileColor, Color.black, 0.20f));
         mr.SetPropertyBlock(mpb);
         return go;
     }

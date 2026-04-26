@@ -27,6 +27,12 @@ public class TilePlacer : MonoBehaviour
     [Range(0f, 1f)]
     public float anchorWhiteLerp = 0.35f;
 
+    [Tooltip("Inset bar drawn on the cell edge facing each rolled door.")]
+    public Color doorIndicatorColor = new Color(1f, 0.85f, 0.20f);
+    [Tooltip("Door bar thickness as a fraction of cellSize (perpendicular to the edge).")]
+    [Range(0.02f, 0.5f)]
+    public float doorIndicatorInsetFraction = 0.125f;
+
     // ── runtime state ─────────────────────────────────────────────────────────
 
     private TileInstance     _instance;
@@ -34,6 +40,7 @@ public class TilePlacer : MonoBehaviour
     private int              _rotation;
     private List<Vector2Int> _preview = new();
     private bool             _previewLive;
+    private List<GameObject> _doorPreviewIndicators = new();
 
     // ── lifecycle ─────────────────────────────────────────────────────────────
 
@@ -107,6 +114,16 @@ public class TilePlacer : MonoBehaviour
             if (!grid.IsInBounds(c.x, c.y)) continue;
             grid.SetCellPreview(c.x, c.y, c == anchor ? anchorColor : baseColor);
         }
+
+        // Yellow door indicators: thin bar on the world-edge each door faces.
+        for (int di = 0; di < _instance.Doors.Length; di++)
+        {
+            var door      = _instance.Doors[di];
+            var cellLocal = _instance.Def.cells[door.CellIndex];
+            var cellWorld = anchor + PlacedTile.RotateOffset(cellLocal, _rotation);
+            if (!grid.IsInBounds(cellWorld.x, cellWorld.y)) continue;
+            SpawnDoorPreviewIndicator(cellWorld, door.Face.Rotate(_rotation));
+        }
     }
 
     void ClearPreview()
@@ -116,6 +133,44 @@ public class TilePlacer : MonoBehaviour
             grid.ResetCellColor(c.x, c.y);
         _preview.Clear();
         _previewLive = false;
+
+        for (int i = 0; i < _doorPreviewIndicators.Count; i++)
+            if (_doorPreviewIndicators[i] != null) Destroy(_doorPreviewIndicators[i]);
+        _doorPreviewIndicators.Clear();
+    }
+
+    void SpawnDoorPreviewIndicator(Vector2Int cell, Dir worldDir)
+    {
+        var   v        = worldDir.Vec();
+        float halfCell = grid.CellSize * 0.5f;
+        float inset    = grid.CellSize * doorIndicatorInsetFraction;
+
+        var cellCenter = grid.CellToWorld(cell.x, cell.y);
+        var pos = new Vector3(
+            cellCenter.x + v.x * (halfCell - inset * 0.5f),
+            grid.BaseY + grid.emptyHeight + 0.005f,
+            cellCenter.z + v.y * (halfCell - inset * 0.5f));
+
+        int absX = Mathf.Abs(v.x), absZ = Mathf.Abs(v.y);
+        var scale = new Vector3(
+            absX * inset + (1 - absX) * grid.CellSize,
+            1f,
+            absZ * inset + (1 - absZ) * grid.CellSize);
+
+        var go = new GameObject($"DoorPreview_{cell.x}_{cell.y}_{worldDir}");
+        go.transform.position   = pos;
+        go.transform.localScale = scale;
+
+        var mf = go.AddComponent<MeshFilter>();
+        var mr = go.AddComponent<MeshRenderer>();
+        mf.sharedMesh     = meshLibrary.IndicatorQuad;
+        mr.sharedMaterial = meshLibrary.OverlayMaterial;
+
+        var mpb = new MaterialPropertyBlock();
+        mpb.SetColor("_BaseColor", doorIndicatorColor);
+        mr.SetPropertyBlock(mpb);
+
+        _doorPreviewIndicators.Add(go);
     }
 
     // ── placement ─────────────────────────────────────────────────────────────
@@ -225,6 +280,16 @@ public class TilePlacer : MonoBehaviour
         var bodyMpb = new MaterialPropertyBlock();
         bodyMpb.SetColor("_BaseColor", inst.Def.color);
         bodyMr.SetPropertyBlock(bodyMpb);
+
+        var floorGo = new GameObject("Floor");
+        floorGo.transform.SetParent(root.transform, false);
+        var floorMf = floorGo.AddComponent<MeshFilter>();
+        var floorMr = floorGo.AddComponent<MeshRenderer>();
+        floorMf.sharedMesh     = meshLibrary.GetFloorMesh(inst.Def);
+        floorMr.sharedMaterial = meshLibrary.SolidMaterial;
+        var floorMpb = new MaterialPropertyBlock();
+        floorMpb.SetColor("_BaseColor", Color.Lerp(inst.Def.color, Color.black, 0.10f));
+        floorMr.SetPropertyBlock(floorMpb);
 
         var topGo = new GameObject("TopCap");
         topGo.transform.SetParent(root.transform, false);
