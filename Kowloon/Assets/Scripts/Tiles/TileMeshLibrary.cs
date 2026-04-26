@@ -130,8 +130,11 @@ public class TileMeshLibrary : MonoBehaviour
 
         var   v        = slot.Face.Vec();
         var   faceVec3 = new Vector3(v.x, 0f, v.y);
-        float dh       = grid.PlacedHeight * TileMeshBuilder.DoorHeightFraction;
-        float dw       = grid.CellSize     * TileMeshBuilder.DoorWidthFraction;
+        // Overlap the cutout slightly so the seam between overlay and wall jamb
+        // is hidden by overlapping geometry (overlay extends behind the jamb).
+        const float overlap = 0.03f;
+        float dh       = grid.PlacedHeight * TileMeshBuilder.DoorHeightFraction + overlap;
+        float dw       = grid.CellSize     * TileMeshBuilder.DoorWidthFraction  + overlap;
 
         // Inset the overlay slightly toward the room so the dithered near wall
         // sits visibly in front of it instead of z-fighting at the same plane.
