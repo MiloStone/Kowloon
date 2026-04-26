@@ -187,9 +187,11 @@ public class TilePlacer : MonoBehaviour
         ClearPreview();
 
         // Resolve door connectivity before spawning visuals: each of this tile's
-        // doors checks its world-facing neighbour for a matching door.
-        var doorOpenStates  = new bool[_instance.Doors.Length];
-        var pendingNeighbour = new List<(PlacedTile tile, int doorIdx)>();
+        // doors checks its world-facing neighbour for a matching door. Doors with
+        // a neighbour but no matching door are "born blocked" (no overlay).
+        var doorOpenStates    = new bool[_instance.Doors.Length];
+        var doorBornBlocked   = new bool[_instance.Doors.Length];
+        var pendingNeighbour  = new List<(PlacedTile tile, int doorIdx)>();
 
         for (int di = 0; di < _instance.Doors.Length; di++)
         {
@@ -201,14 +203,46 @@ public class TilePlacer : MonoBehaviour
 
             var neighbour = grid.GetTileAt(neighbourCell.x, neighbourCell.y);
             if (neighbour == null) continue;
-            if (!neighbour.TryFindDoor(neighbourCell, dirWorld.Opposite(), out int nIdx)) continue;
 
-            doorOpenStates[di] = true;
-            pendingNeighbour.Add((neighbour, nIdx));
+            if (neighbour.TryFindDoor(neighbourCell, dirWorld.Opposite(), out int nIdx))
+            {
+                doorOpenStates[di] = true;
+                pendingNeighbour.Add((neighbour, nIdx));
+            }
+            else
+            {
+                doorBornBlocked[di] = true;
+            }
+        }
+
+        // Wall-block pass: for each of this tile's exterior wall faces that ISN'T
+        // one of our doors, if the neighbour cell holds a tile with a closed door
+        // staring at our wall, that door is now permanently closed — hide it.
+        var bDoorSet     = new HashSet<(int, Dir)>();
+        foreach (var d in _instance.Doors) bDoorSet.Add((d.CellIndex, d.Face));
+        var localCellSet = new HashSet<Vector2Int>(_instance.Def.cells);
+        for (int ci = 0; ci < _instance.Def.cells.Length; ci++)
+        {
+            var cellLocal = _instance.Def.cells[ci];
+            var cellWorld = anchor + PlacedTile.RotateOffset(cellLocal, _rotation);
+            for (int di = 0; di < 4; di++)
+            {
+                var d  = (Dir)di;
+                var dv = d.Vec();
+                if (localCellSet.Contains(new Vector2Int(cellLocal.x + dv.x, cellLocal.y + dv.y))) continue;
+                if (bDoorSet.Contains((ci, d))) continue;
+
+                var dirWorld      = d.Rotate(_rotation);
+                var neighbourCell = cellWorld + dirWorld.Vec();
+                var neighbour     = grid.GetTileAt(neighbourCell.x, neighbourCell.y);
+                if (neighbour == null) continue;
+                if (!neighbour.TryFindDoor(neighbourCell, dirWorld.Opposite(), out int nIdx)) continue;
+                neighbour.HideDoor(nIdx);
+            }
         }
 
         foreach (var c in cells) grid.MarkOccupied(c.x, c.y);
-        var placed = SpawnVisual(_instance, anchor, _rotation, doorOpenStates);
+        var placed = SpawnVisual(_instance, anchor, _rotation, doorOpenStates, doorBornBlocked);
         foreach (var c in cells) grid.SetTileAt(c.x, c.y, placed);
 
         floorManager?.RegisterPlacedTile(placed);
@@ -262,7 +296,7 @@ public class TilePlacer : MonoBehaviour
 
     // ── visual spawning ───────────────────────────────────────────────────────
 
-    PlacedTile SpawnVisual(TileInstance inst, Vector2Int anchor, int rotation, bool[] doorOpenStates)
+    PlacedTile SpawnVisual(TileInstance inst, Vector2Int anchor, int rotation, bool[] doorOpenStates, bool[] doorBornBlocked)
     {
         var bodyMesh = meshLibrary.GetBodyMesh(inst);
         var topMesh  = meshLibrary.GetTopMesh(inst.Def);
@@ -311,12 +345,17 @@ public class TilePlacer : MonoBehaviour
         placed.Setup(inst, rotation, anchor);
 
         // Closed doors get an overlay quad covering the cutout; open doors stay
-        // as a real hole in the body mesh.
+        // as a real hole in the body mesh; "born-blocked" doors (a wall already
+        // sits across them) are silently hidden — closed but no overlay.
         for (int di = 0; di < inst.Doors.Length; di++)
         {
             if (doorOpenStates[di])
             {
                 placed.MarkDoorOpenAtSpawn(di);
+            }
+            else if (doorBornBlocked[di])
+            {
+                // No overlay; the door slot sits flush with the closed wall.
             }
             else
             {
