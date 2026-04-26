@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -30,6 +31,10 @@ public class FloorManager : MonoBehaviour
 
     public bool ConstraintsSatisfied =>
         CurrentScenario != null && CurrentScenario.IsSatisfied(_graph);
+
+    /// <summary>Fires whenever the connectivity graph or scenario changes.</summary>
+    public event Action ContractChanged;
+    public void RaiseContractChanged() => ContractChanged?.Invoke();
 
     // ── lifecycle ─────────────────────────────────────────────────────────────
 
@@ -84,5 +89,6 @@ public class FloorManager : MonoBehaviour
     {
         CurrentScenario = ScenarioPools.RollForFloor(CurrentFloor);
         Debug.Log($"Floor {CurrentFloor} constraint: {CurrentScenario.Describe()}");
+        ContractChanged?.Invoke();
     }
 }

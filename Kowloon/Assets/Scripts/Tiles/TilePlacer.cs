@@ -252,6 +252,7 @@ public class TilePlacer : MonoBehaviour
             floorManager?.Connect(placed, neighbour);
         }
 
+        floorManager?.RaiseContractChanged();
         PickNextTile();
 
         if (wasStair) floorManager?.CompleteFloor();

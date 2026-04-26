@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 
 /// <summary>
 /// A floor's full requirement: every constraint must be satisfied for the
@@ -23,6 +22,18 @@ public class Scenario
         return true;
     }
 
-    public string Describe() =>
-        $"{Name} — [{string.Join("; ", Constraints.Select(c => c.Describe()))}]";
+    public List<ChecklistItem> BuildChecklist(ConnectivityGraph graph)
+    {
+        var items = new List<ChecklistItem>();
+        foreach (var c in Constraints)
+            items.AddRange(c.GetChecklistItems(graph));
+        return items;
+    }
+
+    public string Describe()
+    {
+        var lines = new List<string>();
+        foreach (var c in Constraints) lines.Add(c.Describe());
+        return $"{Name} — [{string.Join("; ", lines)}]";
+    }
 }
