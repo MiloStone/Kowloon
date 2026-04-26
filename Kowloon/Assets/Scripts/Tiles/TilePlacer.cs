@@ -46,7 +46,7 @@ public class TilePlacer : MonoBehaviour
     [Tooltip("Semitone offsets from the chime's native pitch. Defaults to a major " +
              "pentatonic scale (root, +2, +4, +7, +9). Half-steps allowed " +
              "(e.g. 1.5 for a quarter-tone, 1 for a flat-2).")]
-    public float[] pitchSemitones = { 0f, 2f, 4f, 7f, 9f };
+    public float[] pitchSemitones = { -4f, -2f, 0f, 3f, 5f };
     [Tooltip("Most recent picks blocked from re-rolling. 2 = no note can repeat " +
              "until two other notes have played.")]
     [Range(0, 4)] public int pitchCooldown = 2;
@@ -206,9 +206,14 @@ public class TilePlacer : MonoBehaviour
         float inset    = grid.CellSize * doorIndicatorInsetFraction;
 
         var cellCenter = grid.CellToWorld(cell.x, cell.y);
+        // Match the cell-preview layer: float on top of the placed tile when this
+        // cell is occupied, otherwise sit just above the empty floor highlight.
+        float baseY = grid.IsOccupied(cell.x, cell.y)
+            ? grid.BaseY + grid.PlacedHeight + grid.emptyHeight + 0.005f
+            : grid.BaseY + grid.emptyHeight + 0.005f;
         var pos = new Vector3(
             cellCenter.x + v.x * (halfCell - inset * 0.5f),
-            grid.BaseY + grid.emptyHeight + 0.005f,
+            baseY,
             cellCenter.z + v.y * (halfCell - inset * 0.5f));
 
         int absX = Mathf.Abs(v.x), absZ = Mathf.Abs(v.y);
