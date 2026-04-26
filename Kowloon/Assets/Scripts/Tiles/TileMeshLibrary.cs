@@ -140,13 +140,16 @@ public class TileMeshLibrary : MonoBehaviour
         var go = new GameObject($"Door_{slot.CellIndex}_{slot.Face}");
         go.transform.SetParent(parent, false);
         go.transform.localPosition = pos;
-        go.transform.localRotation = Quaternion.LookRotation(faceVec3, Vector3.up);
+        // Face the same way the surrounding wall does (normal points INWARD to
+        // the room) so the dither shader treats this overlay identically — back
+        // face dithered from outside, front face opaque from inside.
+        go.transform.localRotation = Quaternion.LookRotation(-faceVec3, Vector3.up);
         go.transform.localScale    = new Vector3(dw, dh, 1f);
 
         var mf = go.AddComponent<MeshFilter>();
         var mr = go.AddComponent<MeshRenderer>();
         mf.sharedMesh     = OverlayQuad;
-        mr.sharedMaterial = OverlayMaterial;
+        mr.sharedMaterial = SolidMaterial;
 
         var mpb = new MaterialPropertyBlock();
         mpb.SetColor("_BaseColor", overlayColor);
