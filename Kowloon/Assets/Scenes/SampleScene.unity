@@ -348,8 +348,8 @@ MonoBehaviour:
   padding:
     m_Left: 90
     m_Right: 60
-    m_Top: 70
-    m_Bottom: 80
+    m_Top: 100
+    m_Bottom: 150
 --- !u!4 &245184029
 Transform:
   m_ObjectHideFlags: 0
@@ -682,6 +682,7 @@ MonoBehaviour:
   emptyHeight: 0.08
   placedHeight: 1
   emptyColor: {r: 0.2990388, g: 0.2990388, b: 0.3018868, a: 0.3019608}
+  emptyColorOverVoid: {r: 0.18, g: 0.18, b: 0.22, a: 0.2}
 --- !u!4 &415719700
 Transform:
   m_ObjectHideFlags: 0

@@ -23,7 +23,9 @@ public class GridManager : MonoBehaviour
     public float placedHeight = 0.4f;
 
     [Header("Colours")]
-    public Color emptyColor = new Color(0.18f, 0.18f, 0.22f, 0.55f);
+    public Color emptyColor         = new Color(0.18f, 0.18f, 0.22f, 0.55f);
+    [Tooltip("Resting colour for grid cells with no tile beneath them on the previous floor (i.e. floating over the void).")]
+    public Color emptyColorOverVoid = new Color(0.18f, 0.18f, 0.22f, 0.20f);
 
     // ── derived helpers ───────────────────────────────────────────────────────
 
@@ -89,7 +91,7 @@ public class GridManager : MonoBehaviour
 
             var mat = new Material(Shader.Find("Universal Render Pipeline/Unlit"));
             MakeTransparent(mat);
-            mat.color = emptyColor;
+            mat.color = RestColor(x, z);
             cell.GetComponent<Renderer>().material = mat;
 
             _cells[x, z] = cell;
@@ -154,10 +156,12 @@ public class GridManager : MonoBehaviour
             _prevOccupied[x, z]  = _occupied[x, z];
             _occupied[x, z]      = false;
             _tileAt[x, z]        = null;
-            _mats[x, z].color    = emptyColor;
+            _mats[x, z].color    = RestColor(x, z);
             _topMats[x, z].color = Invisible;
         }
     }
+
+    Color RestColor(int x, int z) => _prevOccupied[x, z] ? emptyColor : emptyColorOverVoid;
 
     public bool WasPrevOccupied(int x, int z) =>
         IsInBounds(x, z) && _prevOccupied[x, z];
@@ -205,7 +209,7 @@ public class GridManager : MonoBehaviour
     public void ResetCellColor(int x, int z)
     {
         if (!IsInBounds(x, z)) return;
-        _mats[x, z].color    = emptyColor;
+        _mats[x, z].color    = RestColor(x, z);
         _topMats[x, z].color = Invisible;
     }
 
