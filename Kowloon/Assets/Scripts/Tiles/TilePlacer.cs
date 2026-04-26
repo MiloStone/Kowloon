@@ -61,6 +61,9 @@ public class TilePlacer : MonoBehaviour
     private TileInstance     _instance;
     private TileInstance     _heldInstance;
     private int              _rotation;
+
+    public TileInstance CurrentInstance => _instance;
+    public TileInstance HeldInstance    => _heldInstance;
     private List<Vector2Int> _preview = new();
     private bool             _previewLive;
     private List<GameObject> _doorPreviewIndicators = new();
@@ -113,7 +116,12 @@ public class TilePlacer : MonoBehaviour
         return false;
     }
 
-    void Start() => PickNextTile();
+    void Start()
+    {
+        PickNextTile();
+        if (_heldInstance == null && availableTiles != null && availableTiles.Length > 0)
+            _heldInstance = TileInstance.Roll(RandomTile(), false);
+    }
 
     void Update()
     {
