@@ -46,6 +46,7 @@ public class TilePlacer : MonoBehaviour
     [Tooltip("Major-scale degrees the chime randomly hits (1-indexed).")]
     public int[] pentatonicDegrees = { 1, 2, 3, 5, 6 };
     private AudioSource _audio;
+    private int         _lastDegree = -1;
 
     // ── runtime state ─────────────────────────────────────────────────────────
 
@@ -75,7 +76,13 @@ public class TilePlacer : MonoBehaviour
         // Major-scale degree → semitone offset from root.
         // 1=0, 2=2, 3=4, 4=5, 5=7, 6=9, 7=11.
         int[] semis = { 0, 2, 4, 5, 7, 9, 11 };
-        int   deg   = pentatonicDegrees[Random.Range(0, pentatonicDegrees.Length)];
+        int   deg;
+        if (pentatonicDegrees.Length <= 1)
+            deg = pentatonicDegrees[0];
+        else
+            do { deg = pentatonicDegrees[Random.Range(0, pentatonicDegrees.Length)]; }
+            while (deg == _lastDegree);
+        _lastDegree = deg;
         int   s     = (deg >= 1 && deg <= 7) ? semis[deg - 1] : 0;
         _audio.pitch  = Mathf.Pow(2f, s / 12f);
         _audio.PlayOneShot(placeChime, placeChimeVolume);
