@@ -46,7 +46,9 @@ public class TilePlacer : MonoBehaviour
     [Tooltip("Semitone offsets from the chime's native pitch. Defaults to a major " +
              "pentatonic scale (root, +2, +4, +7, +9). Half-steps allowed " +
              "(e.g. 1.5 for a quarter-tone, 1 for a flat-2).")]
-    public float[] pitchSemitones = { -4f, -2f, 0f, 3f, 5f };
+    public float[] pitchSemitones = { 0f, 2f, 4f, 7f, 9f };
+    [Tooltip("Shift every chime pitch by this many semitones. Negative = lower.")]
+    [Range(-24f, 24f)] public float transposeSemitones = 0f;
     [Tooltip("Most recent picks blocked from re-rolling. 2 = no note can repeat " +
              "until two other notes have played.")]
     [Range(0, 4)] public int pitchCooldown = 2;
@@ -95,7 +97,7 @@ public class TilePlacer : MonoBehaviour
         _recentSemitones.Enqueue(pick);
         while (_recentSemitones.Count > maxBlocked) _recentSemitones.Dequeue();
 
-        _audio.pitch = Mathf.Pow(2f, pick / 12f);
+        _audio.pitch = Mathf.Pow(2f, (pick + transposeSemitones) / 12f);
         _audio.PlayOneShot(placeChime, placeChimeVolume);
     }
 
