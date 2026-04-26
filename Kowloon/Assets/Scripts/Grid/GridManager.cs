@@ -187,7 +187,11 @@ public class GridManager : MonoBehaviour
                (IsInBounds(x, z + 1) && _occupied[x, z + 1]);
     }
 
-    public void MarkOccupied(int x, int z) => _occupied[x, z] = true;
+    public void MarkOccupied(int x, int z)
+    {
+        _occupied[x, z]   = true;
+        _mats[x, z].color = Invisible;
+    }
 
     public void       SetTileAt(int x, int z, PlacedTile t) { if (IsInBounds(x, z)) _tileAt[x, z] = t; }
     public PlacedTile GetTileAt(int x, int z)               => IsInBounds(x, z) ? _tileAt[x, z] : null;
@@ -209,7 +213,7 @@ public class GridManager : MonoBehaviour
     public void ResetCellColor(int x, int z)
     {
         if (!IsInBounds(x, z)) return;
-        _mats[x, z].color    = RestColor(x, z);
+        _mats[x, z].color    = _occupied[x, z] ? Invisible : RestColor(x, z);
         _topMats[x, z].color = Invisible;
     }
 
