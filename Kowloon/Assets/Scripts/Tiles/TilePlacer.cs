@@ -13,6 +13,7 @@ public class TilePlacer : MonoBehaviour
     public GridManager      grid;
     public FloorManager     floorManager;
     public TileMeshLibrary  meshLibrary;
+    public ScoreManager     scoreManager;
     public TileDefinition[] availableTiles;
 
     [Header("Special Tiles")]
@@ -75,6 +76,7 @@ public class TilePlacer : MonoBehaviour
         if (grid         == null) grid         = FindFirstObjectByType<GridManager>();
         if (floorManager == null) floorManager = FindFirstObjectByType<FloorManager>();
         if (meshLibrary  == null) meshLibrary  = FindFirstObjectByType<TileMeshLibrary>();
+        if (scoreManager == null) scoreManager = FindFirstObjectByType<ScoreManager>();
 
         _audio                  = gameObject.AddComponent<AudioSource>();
         _audio.playOnAwake      = false;
@@ -325,6 +327,17 @@ public class TilePlacer : MonoBehaviour
         {
             neighbour.OpenDoor(nIdx);
             floorManager?.Connect(placed, neighbour);
+        }
+
+        // Score: base + per-extra-room-in-suite. Tile-just-placed is always
+        // in a component of size ≥1; suiteSize accounts for any tiles it
+        // joined via doors.
+        if (scoreManager != null)
+        {
+            int suiteSize = floorManager != null
+                ? floorManager.Graph.ComponentSizeContaining(placed)
+                : 1;
+            scoreManager.AddTilePlaced(suiteSize);
         }
 
         floorManager?.RaiseContractChanged();

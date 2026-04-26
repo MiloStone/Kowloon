@@ -12,6 +12,7 @@ public class FloorManager : MonoBehaviour
     [Header("References")]
     public GridManager  grid;
     public OrbitCamera  orbitCamera;
+    public ScoreManager scoreManager;
 
     [Header("Transition")]
     [Tooltip("Duration of the camera pan in seconds.")]
@@ -57,8 +58,9 @@ public class FloorManager : MonoBehaviour
 
     void Awake()
     {
-        if (grid        == null) grid        = FindFirstObjectByType<GridManager>();
-        if (orbitCamera == null) orbitCamera = FindFirstObjectByType<OrbitCamera>();
+        if (grid         == null) grid         = FindFirstObjectByType<GridManager>();
+        if (orbitCamera  == null) orbitCamera  = FindFirstObjectByType<OrbitCamera>();
+        if (scoreManager == null) scoreManager = FindFirstObjectByType<ScoreManager>();
 
         if (panCurve == null || panCurve.length == 0)
             panCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
@@ -106,6 +108,8 @@ public class FloorManager : MonoBehaviour
         }
         _currentFloorTiles.Clear();
         _graph.Clear();
+
+        scoreManager?.AddFloorComplete();
 
         CurrentFloor++;
         float newY = (CurrentFloor - 1) * (grid.PlacedHeight + floorGap);

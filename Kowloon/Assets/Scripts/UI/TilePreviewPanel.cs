@@ -33,6 +33,9 @@ public class TilePreviewPanel : MonoBehaviour
     [Tooltip("Center of the small/held slot.")]
     public Vector2 heldSlotCenter   = new Vector2(0.78f, 0.30f);
     [Range(0.1f, 1f)] public float heldSlotSize    = 0.32f;
+    [Tooltip("Width / height ratio for the rendered slots. >1 = wider " +
+             "(more horizontal room for tiles whose diagonals would otherwise clip).")]
+    [Range(0.5f, 2.5f)] public float slotAspect = 1.4f;
 
     [Header("Render texture resolution")]
     public int currentRTSize = 256;
@@ -164,7 +167,9 @@ public class TilePreviewPanel : MonoBehaviour
 
     RenderTexture MakeRT(int size)
     {
-        var rt = new RenderTexture(size, size, 16, RenderTextureFormat.ARGB32);
+        int w = Mathf.Max(8, Mathf.RoundToInt(size * slotAspect));
+        int h = size;
+        var rt = new RenderTexture(w, h, 16, RenderTextureFormat.ARGB32);
         rt.antiAliasing = 4;
         rt.Create();
         return rt;
@@ -227,8 +232,11 @@ public class TilePreviewPanel : MonoBehaviour
         rtRt.anchorMax = Vector2.zero;
         rtRt.pivot     = new Vector2(0.5f, 0.5f);
 
+        // Slot is sized by its smaller dimension; widening via slotAspect
+        // matches the camera's wider frustum so the rendered tile keeps
+        // proper proportions instead of squishing.
         float side = Mathf.Min(backdropW, backdropH) * sizeFraction;
-        rtRt.sizeDelta        = new Vector2(side, side);
+        rtRt.sizeDelta        = new Vector2(side * slotAspect, side);
         rtRt.anchoredPosition = new Vector2(centerNorm.x * backdropW, centerNorm.y * backdropH);
 
         var raw = go.GetComponent<RawImage>();

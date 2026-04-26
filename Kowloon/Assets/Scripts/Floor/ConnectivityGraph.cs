@@ -57,5 +57,22 @@ public class ConnectivityGraph
         return sizes;
     }
 
+    /// <summary>Size of the connected component containing <paramref name="t"/>.</summary>
+    public int ComponentSizeContaining(PlacedTile t)
+    {
+        if (t == null || !_adj.ContainsKey(t)) return 0;
+        var visited = new HashSet<PlacedTile>();
+        var stack   = new Stack<PlacedTile>();
+        stack.Push(t);
+        while (stack.Count > 0)
+        {
+            var n = stack.Pop();
+            if (!visited.Add(n)) continue;
+            foreach (var nb in _adj[n])
+                if (!visited.Contains(nb)) stack.Push(nb);
+        }
+        return visited.Count;
+    }
+
     public void Clear() => _adj.Clear();
 }
