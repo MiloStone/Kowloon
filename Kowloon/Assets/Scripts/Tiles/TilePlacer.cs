@@ -335,8 +335,10 @@ public class TilePlacer : MonoBehaviour
         topMf.sharedMesh     = topMesh;
         topMr.sharedMaterial = meshLibrary.TopMaterial;
         var topMpb = new MaterialPropertyBlock();
-        topMpb.SetColor("_BaseColor", new Color(inst.Def.color.r, inst.Def.color.g, inst.Def.color.b, 0.05f));
+        topMpb.SetColor("_BaseColor", inst.Def.color);
         topMr.SetPropertyBlock(topMpb);
+        // Hidden until the floor above completes (RevealTop activates it).
+        topGo.SetActive(false);
 
         var placed = root.AddComponent<PlacedTile>();
         placed.bodyRenderer = bodyMr;

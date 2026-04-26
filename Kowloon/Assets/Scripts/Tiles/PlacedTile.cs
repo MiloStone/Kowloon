@@ -103,10 +103,7 @@ public class PlacedTile : MonoBehaviour
 
     public void RevealTop()
     {
-        var mpb = new MaterialPropertyBlock();
-        topRenderer.GetPropertyBlock(mpb);
-        mpb.SetColor("_BaseColor", new Color(tileColor.r, tileColor.g, tileColor.b, 1f));
-        topRenderer.SetPropertyBlock(mpb);
+        if (topRenderer != null) topRenderer.gameObject.SetActive(true);
     }
 
     public static Vector2Int RotateOffset(Vector2Int v, int steps)

@@ -53,7 +53,9 @@ public class TileMeshLibrary : MonoBehaviour
             name             = "TileTop",
             enableInstancing = true,
         };
-        MakeTransparent(TopMaterial);
+        // Render both sides so a revealed top cap is solid whether viewed from
+        // above (the new floor's ground) or from below (the room ceiling).
+        TopMaterial.SetFloat("_Cull", 0f);
 
         OverlayMaterial = new Material(shader)
         {
