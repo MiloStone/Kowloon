@@ -114,25 +114,26 @@ public class TileMeshLibrary : MonoBehaviour
     }
 
     /// <summary>
-    /// Spawn a closed-door overlay quad as a child of the tile root. Quad sits on
-    /// the wall plane, sized to the door window, tinted to a darker tile colour.
+    /// Spawn a closed-door overlay quad as a child of the tile root. Caller picks
+    /// the colour (typically a darkened tile tint for closed-by-loneliness, or the
+    /// flat tile tint for a permanently sealed slot).
     /// </summary>
-    public GameObject CreateDoorOverlay(Transform parent, TileDefinition def, DoorSlot slot, Color tileColor)
+    public GameObject CreateDoorOverlay(Transform parent, TileDefinition def, DoorSlot slot, Color overlayColor)
     {
-        var   cell = def.cells[slot.CellIndex];
-        float step = grid.CellSize + grid.CellGap;
-        float cx   = cell.x * step;
-        float cz   = cell.y * step;
+        var   cell        = def.cells[slot.CellIndex];
+        float step        = grid.CellSize + grid.CellGap;
+        float wallOffset  = TileMeshBuilder.OuterWallOffset(grid.CellSize, grid.CellGap);
+        float cx          = cell.x * step;
+        float cz          = cell.y * step;
 
         var   v        = slot.Face.Vec();
         var   faceVec3 = new Vector3(v.x, 0f, v.y);
         float dh       = grid.PlacedHeight * TileMeshBuilder.DoorHeightFraction;
         float dw       = grid.CellSize     * TileMeshBuilder.DoorWidthFraction;
 
-        // Wall plane is at cell edge (step/2 outward from cell center). Inset
-        // the overlay slightly toward the room so the dithered near wall sits
-        // visibly in front of it instead of z-fighting at the same plane.
-        var pos = new Vector3(cx, dh * 0.5f, cz) + faceVec3 * (step * 0.5f - 0.01f);
+        // Inset the overlay slightly toward the room so the dithered near wall
+        // sits visibly in front of it instead of z-fighting at the same plane.
+        var pos = new Vector3(cx, dh * 0.5f, cz) + faceVec3 * (wallOffset - 0.01f);
 
         var go = new GameObject($"Door_{slot.CellIndex}_{slot.Face}");
         go.transform.SetParent(parent, false);
@@ -146,7 +147,7 @@ public class TileMeshLibrary : MonoBehaviour
         mr.sharedMaterial = OverlayMaterial;
 
         var mpb = new MaterialPropertyBlock();
-        mpb.SetColor("_BaseColor", Color.Lerp(tileColor, Color.black, 0.20f));
+        mpb.SetColor("_BaseColor", overlayColor);
         mr.SetPropertyBlock(mpb);
         return go;
     }

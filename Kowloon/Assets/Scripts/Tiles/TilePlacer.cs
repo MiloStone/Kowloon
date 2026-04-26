@@ -237,7 +237,7 @@ public class TilePlacer : MonoBehaviour
                 var neighbour     = grid.GetTileAt(neighbourCell.x, neighbourCell.y);
                 if (neighbour == null) continue;
                 if (!neighbour.TryFindDoor(neighbourCell, dirWorld.Opposite(), out int nIdx)) continue;
-                neighbour.HideDoor(nIdx);
+                neighbour.SealDoor(nIdx);
             }
         }
 
@@ -344,25 +344,23 @@ public class TilePlacer : MonoBehaviour
         placed.tileColor    = inst.Def.color;
         placed.Setup(inst, rotation, anchor);
 
-        // Closed doors get an overlay quad covering the cutout; open doors stay
-        // as a real hole in the body mesh; "born-blocked" doors (a wall already
-        // sits across them) are silently hidden — closed but no overlay.
+        // Open doors leave a real hole in the body mesh. Closed doors get an
+        // overlay covering the cutout — darker tile colour if the door could
+        // still open later (no wall blocks it yet), or the flat tile colour
+        // when the door is born permanently sealed.
         for (int di = 0; di < inst.Doors.Length; di++)
         {
             if (doorOpenStates[di])
             {
                 placed.MarkDoorOpenAtSpawn(di);
+                continue;
             }
-            else if (doorBornBlocked[di])
-            {
-                // No overlay; the door slot sits flush with the closed wall.
-            }
-            else
-            {
-                var overlay = meshLibrary.CreateDoorOverlay(
-                    root.transform, inst.Def, inst.Doors[di], inst.Def.color);
-                placed.SetDoorOverlay(di, overlay);
-            }
+            Color overlayColor = doorBornBlocked[di]
+                ? inst.Def.color
+                : Color.Lerp(inst.Def.color, Color.black, 0.20f);
+            var overlay = meshLibrary.CreateDoorOverlay(
+                root.transform, inst.Def, inst.Doors[di], overlayColor);
+            placed.SetDoorOverlay(di, overlay);
         }
 
         return placed;

@@ -86,17 +86,19 @@ public class PlacedTile : MonoBehaviour
     }
 
     /// <summary>
-    /// Permanently hide a door's overlay because a wall (not a matching door) was
-    /// placed against it. Door stays closed, but the visual indicator is removed.
+    /// Permanently seal a door's overlay because a wall (not a matching door) was
+    /// placed against it: recolour the overlay to the wall's tile colour so the
+    /// slot blends in. Door stays closed.
     /// </summary>
-    public void HideDoor(int doorIdx)
+    public void SealDoor(int doorIdx)
     {
         var d = Doors[doorIdx];
-        if (d.Overlay != null)
-        {
-            Destroy(d.Overlay);
-            d.Overlay = null;
-        }
+        if (d.Overlay == null) return;
+        var mr  = d.Overlay.GetComponent<Renderer>();
+        var mpb = new MaterialPropertyBlock();
+        mr.GetPropertyBlock(mpb);
+        mpb.SetColor("_BaseColor", tileColor);
+        mr.SetPropertyBlock(mpb);
     }
 
     public void RevealTop()

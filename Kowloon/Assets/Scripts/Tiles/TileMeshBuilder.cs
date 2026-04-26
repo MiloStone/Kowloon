@@ -15,6 +15,15 @@ public static class TileMeshBuilder
     public const float DoorWidthFraction  = 0.45f;
     public const float DoorHeightFraction = 0.75f;
 
+    // How much of cellGap an exterior wall extends to bridge the gap toward the
+    // next grid square. 0 = no bridge (cellSize footprint), 1 = fully flush with
+    // the next cell. Anything < 1 leaves a thin sliver gap to avoid wall-on-wall
+    // clipping when two placed tiles are grid-adjacent.
+    public const float OuterExtensionFraction = 0.85f;
+
+    public static float OuterWallOffset(float cellSize, float cellGap) =>
+        cellSize * 0.5f + cellGap * 0.5f * OuterExtensionFraction;
+
     public static Mesh BuildBody(
         Vector2Int[] cells, float cellSize, float cellGap, float placedHeight,
         IEnumerable<DoorSlot> doors)
@@ -31,6 +40,8 @@ public static class TileMeshBuilder
         float dw = cellSize     * DoorWidthFraction;
         float dh = placedHeight * DoorHeightFraction;
 
+        float outerOffset = OuterWallOffset(cellSize, cellGap);
+
         for (int ci = 0; ci < cells.Length; ci++)
         {
             var   c  = cells[ci];
@@ -42,13 +53,13 @@ public static class TileMeshBuilder
             bool hasB = cellSet.Contains(new(c.x, c.y - 1));
             bool hasF = cellSet.Contains(new(c.x, c.y + 1));
 
-            // Placed tiles occupy their full grid square (step × step) so adjacent
-            // placed tiles meet flush at the boundary, regardless of whether they
-            // belong to the same tile.
-            float x0 = cx - step * 0.5f;
-            float x1 = cx + step * 0.5f;
-            float z0 = cz - step * 0.5f;
-            float z1 = cz + step * 0.5f;
+            // Same-tile neighbours bridge fully (joint at step/2). Exterior walls
+            // bridge partially (OuterExtensionFraction of half-gap), leaving a
+            // thin sliver between adjacent placed tiles so they don't clip.
+            float x0 = cx - (hasL ? step * 0.5f : outerOffset);
+            float x1 = cx + (hasR ? step * 0.5f : outerOffset);
+            float z0 = cz - (hasB ? step * 0.5f : outerOffset);
+            float z1 = cz + (hasF ? step * 0.5f : outerOffset);
             float h  = placedHeight;
 
             float dz0 = cz - dw * 0.5f, dz1 = cz + dw * 0.5f;
@@ -127,17 +138,25 @@ public static class TileMeshBuilder
     public static Mesh BuildFloor(
         Vector2Int[] cells, float cellSize, float cellGap, float placedHeight)
     {
-        float step    = cellSize + cellGap;
-        var   cellSet = new HashSet<Vector2Int>(cells);
-        var   fv      = new List<Vector3>();
-        var   ft      = new List<int>();
+        float step        = cellSize + cellGap;
+        var   cellSet     = new HashSet<Vector2Int>(cells);
+        float outerOffset = OuterWallOffset(cellSize, cellGap);
+        var   fv          = new List<Vector3>();
+        var   ft          = new List<int>();
 
         foreach (var c in cells)
         {
             float cx = c.x * step;
             float cz = c.y * step;
-            float x0 = cx - step * 0.5f, x1 = cx + step * 0.5f;
-            float z0 = cz - step * 0.5f, z1 = cz + step * 0.5f;
+            bool hasL = cellSet.Contains(new(c.x - 1, c.y));
+            bool hasR = cellSet.Contains(new(c.x + 1, c.y));
+            bool hasB = cellSet.Contains(new(c.x, c.y - 1));
+            bool hasF = cellSet.Contains(new(c.x, c.y + 1));
+
+            float x0 = cx - (hasL ? step * 0.5f : outerOffset);
+            float x1 = cx + (hasR ? step * 0.5f : outerOffset);
+            float z0 = cz - (hasB ? step * 0.5f : outerOffset);
+            float z1 = cz + (hasF ? step * 0.5f : outerOffset);
 
             // +Y winding (same vertex order as top cap, just at y=0).
             AddQuad(fv, ft,
@@ -150,16 +169,25 @@ public static class TileMeshBuilder
     public static Mesh BuildTop(
         Vector2Int[] cells, float cellSize, float cellGap, float placedHeight)
     {
-        float step = cellSize + cellGap;
-        var   tv   = new List<Vector3>();
-        var   tt   = new List<int>();
+        float step        = cellSize + cellGap;
+        var   cellSet     = new HashSet<Vector2Int>(cells);
+        float outerOffset = OuterWallOffset(cellSize, cellGap);
+        var   tv          = new List<Vector3>();
+        var   tt          = new List<int>();
 
         foreach (var c in cells)
         {
             float cx = c.x * step;
             float cz = c.y * step;
-            float x0 = cx - step * 0.5f, x1 = cx + step * 0.5f;
-            float z0 = cz - step * 0.5f, z1 = cz + step * 0.5f;
+            bool hasL = cellSet.Contains(new(c.x - 1, c.y));
+            bool hasR = cellSet.Contains(new(c.x + 1, c.y));
+            bool hasB = cellSet.Contains(new(c.x, c.y - 1));
+            bool hasF = cellSet.Contains(new(c.x, c.y + 1));
+
+            float x0 = cx - (hasL ? step * 0.5f : outerOffset);
+            float x1 = cx + (hasR ? step * 0.5f : outerOffset);
+            float z0 = cz - (hasB ? step * 0.5f : outerOffset);
+            float z1 = cz + (hasF ? step * 0.5f : outerOffset);
             float h  = placedHeight;
 
             AddQuad(tv, tt,
