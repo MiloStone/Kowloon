@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -42,18 +41,12 @@ public class ContractPanel : MonoBehaviour
     public RectOffset padding;
 
     // built at runtime
-    private TMP_FontAsset _titleFontAsset;
-    private TMP_FontAsset _bodyFontAsset;
     private RectTransform _listRoot;
 
     void Awake()
     {
         if (floorManager == null) floorManager = FindFirstObjectByType<FloorManager>();
         if (padding == null) padding = new RectOffset(40, 40, 36, 36);
-
-        if (titleFont != null) _titleFontAsset = TMP_FontAsset.CreateFontAsset(titleFont);
-        if (bodyFont  != null) _bodyFontAsset  = TMP_FontAsset.CreateFontAsset(bodyFont);
-
         BuildHierarchy();
     }
 
@@ -117,15 +110,16 @@ public class ContractPanel : MonoBehaviour
 
         // Title.
         var titleGo = new GameObject("Title",
-            typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
+            typeof(RectTransform), typeof(CanvasRenderer), typeof(Text));
         titleGo.transform.SetParent(bubbleGo.transform, false);
-        var titleTmp = titleGo.GetComponent<TextMeshProUGUI>();
-        if (_titleFontAsset != null) titleTmp.font = _titleFontAsset;
-        titleTmp.text       = titleText;
-        titleTmp.fontSize   = titleFontSize;
-        titleTmp.color      = titleColor;
-        titleTmp.alignment  = TextAlignmentOptions.Left;
-        titleTmp.enableWordWrapping = false;
+        var titleTxt = titleGo.GetComponent<Text>();
+        if (titleFont != null) titleTxt.font = titleFont;
+        titleTxt.text                = titleText;
+        titleTxt.fontSize            = titleFontSize;
+        titleTxt.color               = titleColor;
+        titleTxt.alignment           = TextAnchor.UpperLeft;
+        titleTxt.horizontalOverflow  = HorizontalWrapMode.Overflow;
+        titleTxt.verticalOverflow    = VerticalWrapMode.Overflow;
 
         // List root (children = checklist rows).
         var listGo = new GameObject("Checklist",
@@ -185,15 +179,16 @@ public class ContractPanel : MonoBehaviour
 
         // Label.
         var labelGo = new GameObject("Label",
-            typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI), typeof(LayoutElement));
+            typeof(RectTransform), typeof(CanvasRenderer), typeof(Text), typeof(LayoutElement));
         labelGo.transform.SetParent(rowGo.transform, false);
-        var labelTmp = labelGo.GetComponent<TextMeshProUGUI>();
-        if (_bodyFontAsset != null) labelTmp.font = _bodyFontAsset;
-        labelTmp.text      = item.Text;
-        labelTmp.fontSize  = bodyFontSize;
-        labelTmp.color     = bodyColor;
-        labelTmp.alignment = TextAlignmentOptions.Left;
-        labelTmp.enableWordWrapping = true;
+        var labelTxt = labelGo.GetComponent<Text>();
+        if (bodyFont != null) labelTxt.font = bodyFont;
+        labelTxt.text                = item.Text;
+        labelTxt.fontSize            = bodyFontSize;
+        labelTxt.color               = bodyColor;
+        labelTxt.alignment           = TextAnchor.MiddleLeft;
+        labelTxt.horizontalOverflow  = HorizontalWrapMode.Wrap;
+        labelTxt.verticalOverflow    = VerticalWrapMode.Overflow;
         var labelLe = labelGo.GetComponent<LayoutElement>();
         labelLe.flexibleWidth = 1f;
     }
