@@ -107,6 +107,63 @@ public class MaxDegreeAtLeast : Constraint
     public override string Describe() => $"One room with {N}+ connections";
 }
 
+/// <summary>One line per required dead end (degree-1 room), greedy-matched.</summary>
+public class AtLeastNDeadEnds : Constraint
+{
+    public readonly int N;
+    public AtLeastNDeadEnds(int n) { N = n; }
+    int CountDeadEnds(ConnectivityGraph g)
+    {
+        int c = 0;
+        foreach (var n in g.Nodes) if (g.Degree(n) == 1) c++;
+        return c;
+    }
+    public override bool IsSatisfied(ConnectivityGraph g) => CountDeadEnds(g) >= N;
+    public override IEnumerable<ChecklistItem> GetChecklistItems(ConnectivityGraph g)
+    {
+        int dead = CountDeadEnds(g);
+        for (int i = 0; i < N; i++)
+            yield return new ChecklistItem("Dead end", i < dead);
+    }
+    public override string Describe() => $"At least {N} dead end{(N == 1 ? "" : "s")}";
+}
+
+public class ExactlyNSuites : Constraint
+{
+    public readonly int N;
+    public ExactlyNSuites(int n) { N = n; }
+    public override bool IsSatisfied(ConnectivityGraph g) => g.ComponentSizes().Count == N;
+    public override IEnumerable<ChecklistItem> GetChecklistItems(ConnectivityGraph g)
+    {
+        yield return new ChecklistItem($"Exactly {N} suites", IsSatisfied(g));
+    }
+    public override string Describe() => $"Exactly {N} suites";
+}
+
+public class AtLeastNSuites : Constraint
+{
+    public readonly int N;
+    public AtLeastNSuites(int n) { N = n; }
+    public override bool IsSatisfied(ConnectivityGraph g) => g.ComponentSizes().Count >= N;
+    public override IEnumerable<ChecklistItem> GetChecklistItems(ConnectivityGraph g)
+    {
+        yield return new ChecklistItem($"At least {N} suites", IsSatisfied(g));
+    }
+    public override string Describe() => $"At least {N} suites";
+}
+
+public class AtMostNSuites : Constraint
+{
+    public readonly int N;
+    public AtMostNSuites(int n) { N = n; }
+    public override bool IsSatisfied(ConnectivityGraph g) => g.ComponentSizes().Count <= N;
+    public override IEnumerable<ChecklistItem> GetChecklistItems(ConnectivityGraph g)
+    {
+        yield return new ChecklistItem($"At most {N} suites", IsSatisfied(g));
+    }
+    public override string Describe() => $"At most {N} suites";
+}
+
 /// <summary>
 /// Requires multiple distinct suites of given minimum sizes. Emits one line per
 /// required size; greedy match pairs each (smallest-first) with the smallest

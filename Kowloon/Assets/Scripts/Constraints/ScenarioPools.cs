@@ -11,23 +11,57 @@ public static class ScenarioPools
     public static readonly List<Scenario> Easy = new()
     {
         new Scenario("Easy A",
+            new AtLeastNRooms(6),
+            new MaxDegreeAtLeast(3)),
+        new Scenario("Easy B",
+            new AtLeastNRooms(7),
+            new MinimumSizeSuites(2, 2, 2)),
+        new Scenario("Easy C",
+            new AtLeastNRooms(6),
+            new AtLeastNIsolatedRooms(2)),
+        new Scenario("Easy D",
             new AtLeastNRooms(5),
+            new AtLeastNDeadEnds(2)),
+        new Scenario("Easy E",
+            new AtMostNRooms(10),
             new MinimumSizeSuites(3)),
     };
 
     public static readonly List<Scenario> Medium = new()
     {
         new Scenario("Medium A",
+            new AtLeastNRooms(6),
+            new ExactlyNSuites(2),
+            new AllSuitesAtLeast(3)),
+        new Scenario("Medium B",
             new AtLeastNRooms(7),
-            new NoIsolatedRooms()),
+            new NoIsolatedRooms(),
+            new MaxDegreeAtLeast(3)),
+        new Scenario("Medium C",
+            new AtLeastNRooms(8),
+            new MinimumSizeSuites(6)),
+        new Scenario("Medium D",
+            new AtLeastNRooms(8),
+            new AtMostNSuites(3),
+            new MinimumSizeSuites(5)),
     };
 
     public static readonly List<Scenario> Hard = new()
     {
         new Scenario("Hard A",
-            new AtMostNRooms(8),
-            new MinimumSizeSuites(3, 3),
-            new AtLeastNIsolatedRooms(1)),
+            new AtLeastNRooms(8),
+            new AllRoomsConnected()),
+        new Scenario("Hard B",
+            new AtMostNRooms(9),
+            new ExactlyNSuites(3),
+            new AllSuitesAtLeast(2)),
+        new Scenario("Hard C",
+            new AtLeastNRooms(6),
+            new ExactlyNSuites(6)),
+        new Scenario("Hard D",
+            new AtLeastNRooms(8),
+            new MaxDegreeAtLeast(3),
+            new AtLeastNSuites(5)),
     };
 
     public static Scenario RollForFloor(int floor)
