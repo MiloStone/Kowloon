@@ -140,10 +140,11 @@ public class TileMeshLibrary : MonoBehaviour
         var go = new GameObject($"Door_{slot.CellIndex}_{slot.Face}");
         go.transform.SetParent(parent, false);
         go.transform.localPosition = pos;
-        // Face the same way the surrounding wall does (normal points INWARD to
-        // the room) so the dither shader treats this overlay identically — back
-        // face dithered from outside, front face opaque from inside.
-        go.transform.localRotation = Quaternion.LookRotation(-faceVec3, Vector3.up);
+        // The unit quad's mesh normal is -Z (local), so LookRotation(faceVec3,...)
+        // sends the normal to -faceVec3 = INWARD, matching the wall mesh. Result:
+        // dither shader sees a back face from outside (dithered) and a front face
+        // from inside (opaque) — same behaviour as the surrounding wall.
+        go.transform.localRotation = Quaternion.LookRotation(faceVec3, Vector3.up);
         go.transform.localScale    = new Vector3(dw, dh, 1f);
 
         var mf = go.AddComponent<MeshFilter>();
