@@ -59,6 +59,9 @@ public class TileMeshLibrary : MonoBehaviour
             name             = "DoorOverlay",
             enableInstancing = true,
         };
+        // Render both sides so door overlays / preview indicators don't get
+        // back-face culled regardless of which way their unit-quad winding faces.
+        OverlayMaterial.SetFloat("_Cull", 0f);
     }
 
     static void MakeTransparent(Material mat)

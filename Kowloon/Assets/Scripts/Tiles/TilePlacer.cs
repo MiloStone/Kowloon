@@ -283,12 +283,15 @@ public class TilePlacer : MonoBehaviour
 
         var floorGo = new GameObject("Floor");
         floorGo.transform.SetParent(root.transform, false);
+        // Lift above the empty-cell mesh (y = 0..emptyHeight) so the transparent
+        // grid cell doesn't tint the floor color toward the cell's dark gray.
+        floorGo.transform.localPosition = new Vector3(0f, grid.emptyHeight + 0.005f, 0f);
         var floorMf = floorGo.AddComponent<MeshFilter>();
         var floorMr = floorGo.AddComponent<MeshRenderer>();
         floorMf.sharedMesh     = meshLibrary.GetFloorMesh(inst.Def);
         floorMr.sharedMaterial = meshLibrary.SolidMaterial;
         var floorMpb = new MaterialPropertyBlock();
-        floorMpb.SetColor("_BaseColor", Color.Lerp(inst.Def.color, Color.black, 0.10f));
+        floorMpb.SetColor("_BaseColor", Color.Lerp(inst.Def.color, Color.black, 0.20f));
         floorMr.SetPropertyBlock(floorMpb);
 
         var topGo = new GameObject("TopCap");
