@@ -128,9 +128,9 @@ public class TileMeshLibrary : MonoBehaviour
         float dh       = grid.PlacedHeight * TileMeshBuilder.DoorHeightFraction;
         float dw       = grid.CellSize     * TileMeshBuilder.DoorWidthFraction;
 
-        // Wall plane is at cell edge (cellSize/2 outward from cell center along the
+        // Wall plane is at cell edge (step/2 outward from cell center along the
         // face normal). Door window center sits on that plane at y = dh/2.
-        var pos = new Vector3(cx, dh * 0.5f, cz) + faceVec3 * (grid.CellSize * 0.5f);
+        var pos = new Vector3(cx, dh * 0.5f, cz) + faceVec3 * (step * 0.5f);
 
         var go = new GameObject($"Door_{slot.CellIndex}_{slot.Face}");
         go.transform.SetParent(parent, false);

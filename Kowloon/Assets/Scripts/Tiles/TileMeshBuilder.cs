@@ -42,12 +42,14 @@ public static class TileMeshBuilder
             bool hasB = cellSet.Contains(new(c.x, c.y - 1));
             bool hasF = cellSet.Contains(new(c.x, c.y + 1));
 
-            float x0 = cx - cellSize * 0.5f - (hasL ? cellGap * 0.5f : 0f);
-            float x1 = cx + cellSize * 0.5f + (hasR ? cellGap * 0.5f : 0f);
-            float z0 = cz - cellSize * 0.5f - (hasB ? cellGap * 0.5f : 0f);
-            float z1 = cz + cellSize * 0.5f + (hasF ? cellGap * 0.5f : 0f);
+            // Placed tiles occupy their full grid square (step × step) so adjacent
+            // placed tiles meet flush at the boundary, regardless of whether they
+            // belong to the same tile.
+            float x0 = cx - step * 0.5f;
+            float x1 = cx + step * 0.5f;
+            float z0 = cz - step * 0.5f;
+            float z1 = cz + step * 0.5f;
             float h  = placedHeight;
-            float g  = cellGap;
 
             float dz0 = cz - dw * 0.5f, dz1 = cz + dw * 0.5f;
             float dx0 = cx - dw * 0.5f, dx1 = cx + dw * 0.5f;
@@ -116,34 +118,6 @@ public static class TileMeshBuilder
                 }
             }
 
-            // Inside corner slivers — when two perpendicular neighbours exist but
-            // their shared diagonal doesn't, gap-bridging extensions create a notch.
-            bool hasBR = cellSet.Contains(new(c.x + 1, c.y - 1));
-            bool hasBL = cellSet.Contains(new(c.x - 1, c.y - 1));
-            bool hasFR = cellSet.Contains(new(c.x + 1, c.y + 1));
-            bool hasFL = cellSet.Contains(new(c.x - 1, c.y + 1));
-
-            float s = g * 0.5f;
-            if (hasR && hasB && !hasBR)
-            {
-                AddQuad(bv, bt, new(x1, 0, z0 + s), new(x1, h, z0 + s), new(x1, h, z0), new(x1, 0, z0));
-                AddQuad(bv, bt, new(x1, 0, z0), new(x1, h, z0), new(x1 - s, h, z0), new(x1 - s, 0, z0));
-            }
-            if (hasR && hasF && !hasFR)
-            {
-                AddQuad(bv, bt, new(x1, 0, z1), new(x1, h, z1), new(x1, h, z1 - s), new(x1, 0, z1 - s));
-                AddQuad(bv, bt, new(x1 - s, 0, z1), new(x1 - s, h, z1), new(x1, h, z1), new(x1, 0, z1));
-            }
-            if (hasL && hasB && !hasBL)
-            {
-                AddQuad(bv, bt, new(x0, 0, z0), new(x0, h, z0), new(x0, h, z0 + s), new(x0, 0, z0 + s));
-                AddQuad(bv, bt, new(x0 + s, 0, z0), new(x0 + s, h, z0), new(x0, h, z0), new(x0, 0, z0));
-            }
-            if (hasL && hasF && !hasFL)
-            {
-                AddQuad(bv, bt, new(x0, 0, z1 - s), new(x0, h, z1 - s), new(x0, h, z1), new(x0, 0, z1));
-                AddQuad(bv, bt, new(x0, 0, z1), new(x0, h, z1), new(x0 + s, h, z1), new(x0 + s, 0, z1));
-            }
         }
 
         return MakeMesh("TileBody", bv, bt);
@@ -162,15 +136,8 @@ public static class TileMeshBuilder
         {
             float cx = c.x * step;
             float cz = c.y * step;
-            bool hasL = cellSet.Contains(new(c.x - 1, c.y));
-            bool hasR = cellSet.Contains(new(c.x + 1, c.y));
-            bool hasB = cellSet.Contains(new(c.x, c.y - 1));
-            bool hasF = cellSet.Contains(new(c.x, c.y + 1));
-
-            float x0 = cx - cellSize * 0.5f - (hasL ? cellGap * 0.5f : 0f);
-            float x1 = cx + cellSize * 0.5f + (hasR ? cellGap * 0.5f : 0f);
-            float z0 = cz - cellSize * 0.5f - (hasB ? cellGap * 0.5f : 0f);
-            float z1 = cz + cellSize * 0.5f + (hasF ? cellGap * 0.5f : 0f);
+            float x0 = cx - step * 0.5f, x1 = cx + step * 0.5f;
+            float z0 = cz - step * 0.5f, z1 = cz + step * 0.5f;
 
             // +Y winding (same vertex order as top cap, just at y=0).
             AddQuad(fv, ft,
@@ -183,24 +150,16 @@ public static class TileMeshBuilder
     public static Mesh BuildTop(
         Vector2Int[] cells, float cellSize, float cellGap, float placedHeight)
     {
-        float step    = cellSize + cellGap;
-        var   cellSet = new HashSet<Vector2Int>(cells);
-        var   tv      = new List<Vector3>();
-        var   tt      = new List<int>();
+        float step = cellSize + cellGap;
+        var   tv   = new List<Vector3>();
+        var   tt   = new List<int>();
 
         foreach (var c in cells)
         {
             float cx = c.x * step;
             float cz = c.y * step;
-            bool hasL = cellSet.Contains(new(c.x - 1, c.y));
-            bool hasR = cellSet.Contains(new(c.x + 1, c.y));
-            bool hasB = cellSet.Contains(new(c.x, c.y - 1));
-            bool hasF = cellSet.Contains(new(c.x, c.y + 1));
-
-            float x0 = cx - cellSize * 0.5f - (hasL ? cellGap * 0.5f : 0f);
-            float x1 = cx + cellSize * 0.5f + (hasR ? cellGap * 0.5f : 0f);
-            float z0 = cz - cellSize * 0.5f - (hasB ? cellGap * 0.5f : 0f);
-            float z1 = cz + cellSize * 0.5f + (hasF ? cellGap * 0.5f : 0f);
+            float x0 = cx - step * 0.5f, x1 = cx + step * 0.5f;
+            float z0 = cz - step * 0.5f, z1 = cz + step * 0.5f;
             float h  = placedHeight;
 
             AddQuad(tv, tt,
