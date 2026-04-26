@@ -37,6 +37,7 @@ public class GridManager : MonoBehaviour
     private float         _baseY;
     private bool[,]       _occupied;
     private bool[,]       _prevOccupied;
+    private PlacedTile[,] _tileAt;
     private GameObject[,] _cells;
     private Material[,]   _mats;
     private GameObject[,] _topCells;
@@ -58,6 +59,7 @@ public class GridManager : MonoBehaviour
         _cam          = Camera.main;
         _occupied     = new bool[gridSize, gridSize];
         _prevOccupied = new bool[gridSize, gridSize];
+        _tileAt       = new PlacedTile[gridSize, gridSize];
         _cells        = new GameObject[gridSize, gridSize];
         _mats         = new Material[gridSize, gridSize];
         _topCells     = new GameObject[gridSize, gridSize];
@@ -149,8 +151,9 @@ public class GridManager : MonoBehaviour
         for (int x = 0; x < gridSize; x++)
         for (int z = 0; z < gridSize; z++)
         {
-            _prevOccupied[x, z] = _occupied[x, z];
-            _occupied[x, z]     = false;
+            _prevOccupied[x, z]  = _occupied[x, z];
+            _occupied[x, z]      = false;
+            _tileAt[x, z]        = null;
             _mats[x, z].color    = emptyColor;
             _topMats[x, z].color = Invisible;
         }
@@ -181,6 +184,9 @@ public class GridManager : MonoBehaviour
     }
 
     public void MarkOccupied(int x, int z) => _occupied[x, z] = true;
+
+    public void       SetTileAt(int x, int z, PlacedTile t) { if (IsInBounds(x, z)) _tileAt[x, z] = t; }
+    public PlacedTile GetTileAt(int x, int z)               => IsInBounds(x, z) ? _tileAt[x, z] : null;
 
     /// <summary>
     /// Sets the preview colour for cell (x, z).

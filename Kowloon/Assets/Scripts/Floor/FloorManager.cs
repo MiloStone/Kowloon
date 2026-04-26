@@ -19,7 +19,10 @@ public class FloorManager : MonoBehaviour
 
     public int CurrentFloor { get; private set; } = 1;
 
-    private readonly List<PlacedTile> _currentFloorTiles = new();
+    private readonly List<PlacedTile>   _currentFloorTiles = new();
+    private readonly ConnectivityGraph  _graph             = new();
+
+    public ConnectivityGraph Graph => _graph;
 
     // ── lifecycle ─────────────────────────────────────────────────────────────
 
@@ -40,13 +43,20 @@ public class FloorManager : MonoBehaviour
 
     // ── public API ────────────────────────────────────────────────────────────
 
-    public void RegisterPlacedTile(PlacedTile tile) => _currentFloorTiles.Add(tile);
+    public void RegisterPlacedTile(PlacedTile tile)
+    {
+        _currentFloorTiles.Add(tile);
+        _graph.AddNode(tile);
+    }
+
+    public void Connect(PlacedTile a, PlacedTile b) => _graph.Connect(a, b);
 
     public void CompleteFloor()
     {
         foreach (var tile in _currentFloorTiles)
             tile.RevealTop();
         _currentFloorTiles.Clear();
+        _graph.Clear();
 
         CurrentFloor++;
         float newY = (CurrentFloor - 1) * grid.PlacedHeight;
