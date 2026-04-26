@@ -175,6 +175,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  floorGap: 0.01
 --- !u!4 &90098957
 Transform:
   m_ObjectHideFlags: 0
@@ -299,6 +300,70 @@ Material:
     - _Color: {r: 0.11999995, g: 0.11999995, b: 0.13999996, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
+--- !u!1 &245184027
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 245184029}
+  - component: {fileID: 245184028}
+  m_Layer: 0
+  m_Name: ContractUI
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &245184028
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 245184027}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eb76b6592492dc347b9f572c738effa8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  floorManager: {fileID: 0}
+  bubbleSprite: {fileID: 21300000, guid: 6208ef85c7b14e74aafda2e3f7b1ae02, type: 3}
+  checkSprite: {fileID: 21300000, guid: 16fe10fcb2e41fd46b27d571d845d7c6, type: 3}
+  xSprite: {fileID: 21300000, guid: c5e44877ba0f1954eac197a1538a0f39, type: 3}
+  titleFont: {fileID: 12800000, guid: 08eee08ba69b3c842a14a125ff12081b, type: 3}
+  bodyFont: {fileID: 12800000, guid: b74a5b5175aeb914090377a63113f5ae, type: 3}
+  widthFraction: 0.25
+  leftInsetFraction: 0.02
+  titleText: CONTRACT
+  titleColor: {r: 0.15, g: 0.2, b: 0.25, a: 1}
+  bodyColor: {r: 0.15, g: 0.2, b: 0.25, a: 1}
+  titleFontSize: 48
+  bodyFontSize: 28
+  iconSize: 36
+  rowSpacing: 6
+  padding:
+    m_Left: 0
+    m_Right: 0
+    m_Top: 0
+    m_Bottom: 0
+--- !u!4 &245184029
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 245184027}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0
@@ -833,6 +898,8 @@ MonoBehaviour:
   validColor: {r: 0.4, g: 0.8, b: 0.45, a: 1}
   invalidColor: {r: 0.8, g: 0.28, b: 0.28, a: 1}
   anchorWhiteLerp: 0.35
+  doorIndicatorColor: {r: 1, g: 0.85, b: 0.2, a: 1}
+  doorIndicatorInsetFraction: 0.125
 --- !u!4 &1838939325
 Transform:
   m_ObjectHideFlags: 0
@@ -860,3 +927,4 @@ SceneRoots:
   - {fileID: 1838939325}
   - {fileID: 90098957}
   - {fileID: 102306237}
+  - {fileID: 245184029}
