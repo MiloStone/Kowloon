@@ -17,6 +17,9 @@ public class FloorManager : MonoBehaviour
     [Tooltip("Ease curve for the camera pan. Default is smooth ease-in-out.")]
     public AnimationCurve panCurve;
 
+    [Tooltip("Vertical gap inserted between completed floors to avoid clipping.")]
+    public float floorGap = 0.01f;
+
     public int CurrentFloor { get; private set; } = 1;
 
     private readonly List<PlacedTile>   _currentFloorTiles = new();
@@ -59,7 +62,7 @@ public class FloorManager : MonoBehaviour
         _graph.Clear();
 
         CurrentFloor++;
-        float newY = (CurrentFloor - 1) * grid.PlacedHeight;
+        float newY = (CurrentFloor - 1) * (grid.PlacedHeight + floorGap);
 
         grid.MoveTo(newY);
         grid.ClearOccupied();
