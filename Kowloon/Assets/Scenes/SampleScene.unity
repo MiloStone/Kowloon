@@ -336,7 +336,8 @@ MonoBehaviour:
   titleFont: {fileID: 12800000, guid: 08eee08ba69b3c842a14a125ff12081b, type: 3}
   bodyFont: {fileID: 12800000, guid: b74a5b5175aeb914090377a63113f5ae, type: 3}
   widthFraction: 0.25
-  leftInsetFraction: 0.02
+  leftInsetFraction: 0.005
+  bubblePixelsPerUnitMultiplier: 4
   titleText: CONTRACT
   titleColor: {r: 0.15, g: 0.2, b: 0.25, a: 1}
   bodyColor: {r: 0.15, g: 0.2, b: 0.25, a: 1}
@@ -345,10 +346,10 @@ MonoBehaviour:
   iconSize: 72
   rowSpacing: 6
   padding:
-    m_Left: 0
-    m_Right: 0
-    m_Top: 0
-    m_Bottom: 0
+    m_Left: 90
+    m_Right: 60
+    m_Top: 70
+    m_Bottom: 80
 --- !u!4 &245184029
 Transform:
   m_ObjectHideFlags: 0
