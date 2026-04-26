@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -20,6 +21,16 @@ public class FloorManager : MonoBehaviour
 
     [Tooltip("Vertical gap inserted between completed floors to avoid clipping.")]
     public float floorGap = 0.01f;
+
+    [Header("Floor-completion ripple")]
+    [Tooltip("Per-tile bounce duration during the ripple.")]
+    public float rippleBounceDuration = 0.20f;
+    [Tooltip("Bounce height as a fraction of placed tile height.")]
+    public float rippleBounceHeight = 0.30f;
+    [Tooltip("Delay between successive diagonals of the ripple, in seconds.")]
+    public float rippleStepDelay = 0.05f;
+    [Tooltip("Extra wait after the ripple finishes before moving up.")]
+    public float ripplePostDelay = 0.15f;
 
     public int      CurrentFloor    { get; private set; } = 1;
     public Scenario CurrentScenario { get; private set; }
@@ -65,8 +76,29 @@ public class FloorManager : MonoBehaviour
 
     public void Connect(PlacedTile a, PlacedTile b) => _graph.Connect(a, b);
 
-    public void CompleteFloor()
+    public void CompleteFloor() => StartCoroutine(CompleteFloorRoutine());
+
+    IEnumerator CompleteFloorRoutine()
     {
+        // Pick a random corner; ripple travels diagonally toward the opposite.
+        // Bucket tiles by Manhattan distance from the start corner so each
+        // diagonal "front" bounces together.
+        var startCorner = (UnityEngine.Random.value < 0.5f ? 0 : grid.GridSize - 1,
+                           UnityEngine.Random.value < 0.5f ? 0 : grid.GridSize - 1);
+
+        float maxDelay = 0f;
+        foreach (var tile in _currentFloorTiles)
+        {
+            int dx    = Mathf.Abs(tile.Anchor.x - startCorner.Item1);
+            int dy    = Mathf.Abs(tile.Anchor.y - startCorner.Item2);
+            float delay = (dx + dy) * rippleStepDelay;
+            maxDelay = Mathf.Max(maxDelay, delay);
+            tile.StartCoroutine(tile.AnimateBounce(
+                delay, rippleBounceDuration, rippleBounceHeight * grid.PlacedHeight));
+        }
+
+        yield return new WaitForSeconds(maxDelay + rippleBounceDuration + ripplePostDelay);
+
         foreach (var tile in _currentFloorTiles)
         {
             tile.SealAllClosedDoors();

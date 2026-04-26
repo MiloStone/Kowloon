@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 /// <summary>
@@ -124,5 +125,48 @@ public class PlacedTile : MonoBehaviour
         for (int i = 0; i < steps; i++)
             v = new Vector2Int(v.y, -v.x);
         return v;
+    }
+
+    // ── animations ────────────────────────────────────────────────────────────
+
+    /// <summary>Drop in from above with a slight scale pop. Run once at spawn.</summary>
+    public IEnumerator AnimateDropIn(float duration, float dropHeight)
+    {
+        var restPos   = transform.position;
+        var startPos  = restPos + Vector3.up * dropHeight;
+        var restScale = transform.localScale;
+        var startScale = restScale * 0.92f;
+
+        float t = 0f;
+        while (t < duration)
+        {
+            t += Time.deltaTime;
+            float u  = Mathf.Clamp01(t / duration);
+            float eu = 1f - Mathf.Pow(1f - u, 3f); // ease-out cubic
+            transform.position   = Vector3.LerpUnclamped(startPos,   restPos,   eu);
+            transform.localScale = Vector3.LerpUnclamped(startScale, restScale, eu);
+            yield return null;
+        }
+        transform.position   = restPos;
+        transform.localScale = restScale;
+    }
+
+    /// <summary>Pop up then settle back. Used for floor-completion ripple.</summary>
+    public IEnumerator AnimateBounce(float delay, float duration, float height)
+    {
+        if (delay > 0f) yield return new WaitForSeconds(delay);
+
+        var restPos = transform.position;
+        float t = 0f;
+        while (t < duration)
+        {
+            t += Time.deltaTime;
+            float u = Mathf.Clamp01(t / duration);
+            // sine arc 0→1→0 over the duration.
+            float arc = Mathf.Sin(u * Mathf.PI);
+            transform.position = restPos + Vector3.up * (arc * height);
+            yield return null;
+        }
+        transform.position = restPos;
     }
 }

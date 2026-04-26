@@ -33,6 +33,20 @@ public class TilePlacer : MonoBehaviour
     [Range(0.02f, 0.5f)]
     public float doorIndicatorInsetFraction = 0.125f;
 
+    [Header("Animation")]
+    [Tooltip("Seconds for a placed tile to drop into its final position.")]
+    public float dropDuration = 0.25f;
+    [Tooltip("How high above the target a tile starts, in cell heights.")]
+    public float dropHeightCells = 0.6f;
+
+    [Header("Audio")]
+    public AudioClip placeChime;
+    [Tooltip("Volume for the place chime.")]
+    [Range(0f, 1f)] public float placeChimeVolume = 1f;
+    [Tooltip("Major-scale degrees the chime randomly hits (1-indexed).")]
+    public int[] pentatonicDegrees = { 1, 2, 3, 5, 6 };
+    private AudioSource _audio;
+
     // ── runtime state ─────────────────────────────────────────────────────────
 
     private TileInstance     _instance;
@@ -49,6 +63,22 @@ public class TilePlacer : MonoBehaviour
         if (grid         == null) grid         = FindFirstObjectByType<GridManager>();
         if (floorManager == null) floorManager = FindFirstObjectByType<FloorManager>();
         if (meshLibrary  == null) meshLibrary  = FindFirstObjectByType<TileMeshLibrary>();
+
+        _audio                  = gameObject.AddComponent<AudioSource>();
+        _audio.playOnAwake      = false;
+        _audio.spatialBlend     = 0f;
+    }
+
+    void PlayPlaceChime()
+    {
+        if (placeChime == null || _audio == null) return;
+        // Major-scale degree → semitone offset from root.
+        // 1=0, 2=2, 3=4, 4=5, 5=7, 6=9, 7=11.
+        int[] semis = { 0, 2, 4, 5, 7, 9, 11 };
+        int   deg   = pentatonicDegrees[Random.Range(0, pentatonicDegrees.Length)];
+        int   s     = (deg >= 1 && deg <= 7) ? semis[deg - 1] : 0;
+        _audio.pitch  = Mathf.Pow(2f, s / 12f);
+        _audio.PlayOneShot(placeChime, placeChimeVolume);
     }
 
     void Start() => PickNextTile();
@@ -253,6 +283,9 @@ public class TilePlacer : MonoBehaviour
         }
 
         floorManager?.RaiseContractChanged();
+        PlayPlaceChime();
+        placed.StartCoroutine(placed.AnimateDropIn(
+            dropDuration, dropHeightCells * grid.PlacedHeight));
         PickNextTile();
 
         if (wasStair) floorManager?.CompleteFloor();
