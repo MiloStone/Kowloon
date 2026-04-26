@@ -28,5 +28,34 @@ public class ConnectivityGraph
 
     public int NodeCount => _adj.Count;
 
+    public IEnumerable<PlacedTile> Nodes => _adj.Keys;
+
+    public int Degree(PlacedTile t) =>
+        _adj.TryGetValue(t, out var set) ? set.Count : 0;
+
+    /// <summary>Sizes of each connected component (isolated tile = size 1).</summary>
+    public List<int> ComponentSizes()
+    {
+        var visited = new HashSet<PlacedTile>();
+        var sizes   = new List<int>();
+        foreach (var start in _adj.Keys)
+        {
+            if (visited.Contains(start)) continue;
+            int   size  = 0;
+            var   stack = new Stack<PlacedTile>();
+            stack.Push(start);
+            while (stack.Count > 0)
+            {
+                var n = stack.Pop();
+                if (!visited.Add(n)) continue;
+                size++;
+                foreach (var nb in _adj[n])
+                    if (!visited.Contains(nb)) stack.Push(nb);
+            }
+            sizes.Add(size);
+        }
+        return sizes;
+    }
+
     public void Clear() => _adj.Clear();
 }

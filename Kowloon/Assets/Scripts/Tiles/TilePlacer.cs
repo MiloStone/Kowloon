@@ -67,11 +67,11 @@ public class TilePlacer : MonoBehaviour
     void HandleStairToggle()
     {
         if (!Keyboard.current.enterKey.wasPressedThisFrame) return;
+        if (_instance != null && _instance.Def == stairTile) return;
+        if (floorManager == null || !floorManager.ConstraintsSatisfied) return;
+
         ClearPreview();
-        bool wasStair = _instance != null && _instance.Def == stairTile;
-        _instance = wasStair
-            ? TileInstance.Roll(RandomTile(), false)
-            : TileInstance.Roll(stairTile,    true);
+        _instance = TileInstance.Roll(stairTile, true);
         _rotation = 0;
     }
 
