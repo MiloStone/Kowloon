@@ -29,6 +29,7 @@ public class GridManager : MonoBehaviour
 
     private float         _baseY;
     private bool[,]       _occupied;
+    private PlacedTile[,] _tileAt;
     private GameObject[,] _cells;
     private Material[,]   _mats;
     private Camera        _cam;
@@ -47,6 +48,7 @@ public class GridManager : MonoBehaviour
     {
         _cam      = Camera.main;
         _occupied = new bool[gridSize, gridSize];
+        _tileAt   = new PlacedTile[gridSize, gridSize];
         _cells    = new GameObject[gridSize, gridSize];
         _mats     = new Material[gridSize, gridSize];
         BuildGrid();
@@ -95,6 +97,7 @@ public class GridManager : MonoBehaviour
         for (int z = 0; z < gridSize; z++)
         {
             _occupied[x, z]    = false;
+            _tileAt[x, z]      = null;
             _mats[x, z].color  = emptyColor;
         }
     }
@@ -121,6 +124,9 @@ public class GridManager : MonoBehaviour
     }
 
     public void MarkOccupied(int x, int z) => _occupied[x, z] = true;
+
+    public void       SetTileAt(int x, int z, PlacedTile t) { if (IsInBounds(x, z)) _tileAt[x, z] = t; }
+    public PlacedTile GetTileAt(int x, int z)               => IsInBounds(x, z) ? _tileAt[x, z] : null;
 
     public void SetCellPreview(int x, int z, Color c)  { if (IsInBounds(x, z)) _mats[x, z].color = c; }
     public void ResetCellColor(int x, int z)           { if (IsInBounds(x, z)) _mats[x, z].color = emptyColor; }

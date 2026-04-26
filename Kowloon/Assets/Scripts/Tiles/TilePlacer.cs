@@ -4,7 +4,8 @@ using UnityEngine.InputSystem;
 
 /// <summary>
 /// Manages the active tile: rotation (Q/E), hold (Space), stair toggle (Enter),
-/// hover preview, and left-click placement.
+/// hover preview, and left-click placement. Owns per-draw door rolling and
+/// resolves door connectivity at placement time.
 /// </summary>
 public class TilePlacer : MonoBehaviour
 {
@@ -28,8 +29,8 @@ public class TilePlacer : MonoBehaviour
 
     // ── runtime state ─────────────────────────────────────────────────────────
 
-    private TileDefinition   _tile;
-    private TileDefinition   _heldTile;
+    private TileInstance     _instance;
+    private TileInstance     _heldInstance;
     private int              _rotation;
     private List<Vector2Int> _preview = new();
     private bool             _previewLive;
@@ -60,7 +61,10 @@ public class TilePlacer : MonoBehaviour
     {
         if (!Keyboard.current.enterKey.wasPressedThisFrame) return;
         ClearPreview();
-        _tile     = (_tile == stairTile) ? RandomTile() : stairTile;
+        bool wasStair = _instance != null && _instance.Def == stairTile;
+        _instance = wasStair
+            ? TileInstance.Roll(RandomTile(), false)
+            : TileInstance.Roll(stairTile,    true);
         _rotation = 0;
     }
 
@@ -78,10 +82,10 @@ public class TilePlacer : MonoBehaviour
     {
         if (!Keyboard.current.spaceKey.wasPressedThisFrame) return;
         ClearPreview();
-        var incoming = _heldTile ?? RandomTile();
-        _heldTile = _tile;
-        _tile     = incoming;
-        _rotation = 0;
+        var incoming  = _heldInstance ?? TileInstance.Roll(RandomTile(), false);
+        _heldInstance = _instance;
+        _instance     = incoming;
+        _rotation     = 0;
     }
 
     // ── preview ───────────────────────────────────────────────────────────────
@@ -89,7 +93,7 @@ public class TilePlacer : MonoBehaviour
     void UpdatePreview()
     {
         ClearPreview();
-        if (_tile == null) return;
+        if (_instance == null) return;
         if (!grid.TryGetMouseCell(out Vector2Int anchor)) return;
 
         _preview     = GetWorldCells(anchor);
@@ -124,11 +128,41 @@ public class TilePlacer : MonoBehaviour
         var cells = GetWorldCells(anchor);
         if (!IsValidPlacement(cells)) return;
 
-        bool wasStair = (_tile == stairTile);
+        bool wasStair = (_instance.Def == stairTile);
         ClearPreview();
 
+        // Resolve door connectivity before spawning visuals: each of this tile's
+        // doors checks its world-facing neighbour for a matching door.
+        var doorOpenStates  = new bool[_instance.Doors.Length];
+        var pendingNeighbour = new List<(PlacedTile tile, int doorIdx)>();
+
+        for (int di = 0; di < _instance.Doors.Length; di++)
+        {
+            var door      = _instance.Doors[di];
+            var cellLocal = _instance.Def.cells[door.CellIndex];
+            var cellWorld = anchor + PlacedTile.RotateOffset(cellLocal, _rotation);
+            var dirWorld  = door.Face.Rotate(_rotation);
+            var neighbourCell = cellWorld + dirWorld.Vec();
+
+            var neighbour = grid.GetTileAt(neighbourCell.x, neighbourCell.y);
+            if (neighbour == null) continue;
+            if (!neighbour.TryFindDoor(neighbourCell, dirWorld.Opposite(), out int nIdx)) continue;
+
+            doorOpenStates[di] = true;
+            pendingNeighbour.Add((neighbour, nIdx));
+        }
+
         foreach (var c in cells) grid.MarkOccupied(c.x, c.y);
-        SpawnVisual(_tile, anchor);
+        var placed = SpawnVisual(_instance, anchor, _rotation, doorOpenStates);
+        foreach (var c in cells) grid.SetTileAt(c.x, c.y, placed);
+
+        floorManager?.RegisterPlacedTile(placed);
+        foreach (var (neighbour, nIdx) in pendingNeighbour)
+        {
+            neighbour.OpenDoor(nIdx);
+            floorManager?.Connect(placed, neighbour);
+        }
+
         PickNextTile();
 
         if (wasStair) floorManager?.CompleteFloor();
@@ -139,7 +173,7 @@ public class TilePlacer : MonoBehaviour
     void PickNextTile()
     {
         if (availableTiles == null || availableTiles.Length == 0) return;
-        _tile     = RandomTile();
+        _instance = TileInstance.Roll(RandomTile(), false);
         _rotation = 0;
     }
 
@@ -149,16 +183,9 @@ public class TilePlacer : MonoBehaviour
     List<Vector2Int> GetWorldCells(Vector2Int anchor)
     {
         var result = new List<Vector2Int>();
-        foreach (var offset in _tile.cells)
-            result.Add(anchor + RotateOffset(offset, _rotation));
+        foreach (var offset in _instance.Def.cells)
+            result.Add(anchor + PlacedTile.RotateOffset(offset, _rotation));
         return result;
-    }
-
-    static Vector2Int RotateOffset(Vector2Int v, int steps)
-    {
-        for (int i = 0; i < steps; i++)
-            v = new Vector2Int(v.y, -v.x);
-        return v;
     }
 
     bool IsValidPlacement(List<Vector2Int> cells)
@@ -178,26 +205,23 @@ public class TilePlacer : MonoBehaviour
 
     // ── visual spawning ───────────────────────────────────────────────────────
 
-    void SpawnVisual(TileDefinition tile, Vector2Int anchor)
+    PlacedTile SpawnVisual(TileInstance inst, Vector2Int anchor, int rotation, bool[] doorOpenStates)
     {
-        if (!meshLibrary.TryGetMeshes(tile, out Mesh bodyMesh, out Mesh topMesh))
-        {
-            Debug.LogWarning($"TileMeshLibrary: no cached mesh for {tile.displayName}");
-            return;
-        }
+        var bodyMesh = meshLibrary.GetBodyMesh(inst);
+        var topMesh  = meshLibrary.GetTopMesh(inst.Def);
 
-        var root = new GameObject($"Tile_{tile.displayName}");
+        var root = new GameObject($"Tile_{inst.Def.displayName}");
         root.transform.position = grid.CellToWorld(anchor.x, anchor.y);
-        root.transform.rotation = Quaternion.Euler(0f, _rotation * 90f, 0f);
+        root.transform.rotation = Quaternion.Euler(0f, rotation * 90f, 0f);
 
         var bodyGo = new GameObject("Body");
         bodyGo.transform.SetParent(root.transform, false);
         var bodyMf = bodyGo.AddComponent<MeshFilter>();
         var bodyMr = bodyGo.AddComponent<MeshRenderer>();
-        bodyMf.sharedMesh      = bodyMesh;
-        bodyMr.sharedMaterial  = meshLibrary.SolidMaterial;
+        bodyMf.sharedMesh     = bodyMesh;
+        bodyMr.sharedMaterial = meshLibrary.SolidMaterial;
         var bodyMpb = new MaterialPropertyBlock();
-        bodyMpb.SetColor("_BaseColor", tile.color);
+        bodyMpb.SetColor("_BaseColor", inst.Def.color);
         bodyMr.SetPropertyBlock(bodyMpb);
 
         var topGo = new GameObject("TopCap");
@@ -207,14 +231,31 @@ public class TilePlacer : MonoBehaviour
         topMf.sharedMesh     = topMesh;
         topMr.sharedMaterial = meshLibrary.TopMaterial;
         var topMpb = new MaterialPropertyBlock();
-        topMpb.SetColor("_BaseColor", new Color(tile.color.r, tile.color.g, tile.color.b, 0.05f));
+        topMpb.SetColor("_BaseColor", new Color(inst.Def.color.r, inst.Def.color.g, inst.Def.color.b, 0.05f));
         topMr.SetPropertyBlock(topMpb);
 
         var placed = root.AddComponent<PlacedTile>();
         placed.bodyRenderer = bodyMr;
         placed.topRenderer  = topMr;
-        placed.tileColor    = tile.color;
+        placed.tileColor    = inst.Def.color;
+        placed.Setup(inst, rotation, anchor);
 
-        floorManager?.RegisterPlacedTile(placed);
+        // Closed doors get an overlay quad covering the cutout; open doors stay
+        // as a real hole in the body mesh.
+        for (int di = 0; di < inst.Doors.Length; di++)
+        {
+            if (doorOpenStates[di])
+            {
+                placed.MarkDoorOpenAtSpawn(di);
+            }
+            else
+            {
+                var overlay = meshLibrary.CreateDoorOverlay(
+                    root.transform, inst.Def, inst.Doors[di], inst.Def.color);
+                placed.SetDoorOverlay(di, overlay);
+            }
+        }
+
+        return placed;
     }
 }
