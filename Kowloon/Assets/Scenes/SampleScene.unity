@@ -985,7 +985,7 @@ MonoBehaviour:
   scoreManager: {fileID: 0}
   bubbleSprite: {fileID: 21300000, guid: 6208ef85c7b14e74aafda2e3f7b1ae02, type: 3}
   font: {fileID: 12800000, guid: 08eee08ba69b3c842a14a125ff12081b, type: 3}
-  widthFraction: 0.16
+  widthFraction: 0.242
   anchoredOffset: {x: -30, y: -30}
   bubblePixelsPerUnitMultiplier: 4
   padding:
