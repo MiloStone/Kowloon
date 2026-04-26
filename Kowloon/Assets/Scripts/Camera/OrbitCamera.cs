@@ -3,8 +3,9 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 /// <summary>
-/// Orthographic camera that orbits a fixed point on a circular track.
-/// Right-click drag rotates around the Y axis; scroll wheel zooms.
+/// Perspective camera that orbits a fixed point on a circular track.
+/// Right-click drag rotates around the Y axis and adjusts elevation.
+/// Scroll wheel zooms by changing orbit distance.
 /// PanTargetTo() smoothly moves the orbit target (used for floor transitions).
 /// </summary>
 [RequireComponent(typeof(Camera))]
@@ -23,21 +24,24 @@ public class OrbitCamera : MonoBehaviour
     [Tooltip("Starting horizontal angle in degrees.")]
     public float startAngleDeg = 45f;
 
-    [Tooltip("Mouse sensitivity for right-click drag.")]
+    [Tooltip("Mouse sensitivity for right-click drag (horizontal orbit).")]
     public float sensitivity = 0.4f;
 
-    [Header("Orthographic")]
-    public float orthoSize = 6f;
+    [Tooltip("Mouse sensitivity for right-click drag (vertical elevation).")]
+    public float elevationSensitivity = 0.3f;
+
+    [Tooltip("Clamp range for elevation in degrees.")]
+    public float elevationMin = 5f;
+    public float elevationMax = 85f;
 
     [Header("Zoom")]
-    public float zoomSpeed = 1.5f;
-    public float zoomMin   = 2f;
-    public float zoomMax   = 14f;
+    public float zoomSpeed = 8f;
+    public float zoomMin   = 4f;
+    public float zoomMax   = 30f;
 
     // ── private ───────────────────────────────────────────────────────────────
 
     private float      _angle;
-    private float      _currentSize;
     private Camera     _cam;
     private Coroutine  _panCoroutine;
 
@@ -46,9 +50,7 @@ public class OrbitCamera : MonoBehaviour
     void Awake()
     {
         _cam                  = GetComponent<Camera>();
-        _cam.orthographic     = true;
-        _currentSize          = orthoSize;
-        _cam.orthographicSize = _currentSize;
+        _cam.orthographic     = false;
         _angle                = startAngleDeg;
         ApplyTransform();
     }
@@ -58,15 +60,17 @@ public class OrbitCamera : MonoBehaviour
         if (Mouse.current.rightButton.isPressed)
         {
             float dx = Mouse.current.delta.x.ReadValue();
-            _angle += dx * sensitivity;
+            float dy = Mouse.current.delta.y.ReadValue();
+            _angle       += dx * sensitivity;
+            elevationDeg  = Mathf.Clamp(elevationDeg - dy * elevationSensitivity, elevationMin, elevationMax);
             ApplyTransform();
         }
 
         float scroll = Mouse.current.scroll.y.ReadValue();
         if (scroll != 0f)
         {
-            _currentSize = Mathf.Clamp(_currentSize - scroll * zoomSpeed * Time.deltaTime, zoomMin, zoomMax);
-            _cam.orthographicSize = _currentSize;
+            distance = Mathf.Clamp(distance - scroll * zoomSpeed * Time.deltaTime, zoomMin, zoomMax);
+            ApplyTransform();
         }
     }
 

@@ -190,6 +190,60 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &102306235
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 102306237}
+  - component: {fileID: 102306236}
+  m_Layer: 0
+  m_Name: TileMeshLibrary
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &102306236
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 102306235}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0bf64eb0be5b92e40acd84b82794252c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  grid: {fileID: 0}
+  tileDefinitions:
+  - {fileID: 11400000, guid: 155296910202839418601f7036fa1577, type: 2}
+  - {fileID: 11400000, guid: dbcb718519a286f4f9b8fac6c2c7244c, type: 2}
+  - {fileID: 11400000, guid: 6c16b1fc33ebce24fb6e36a765e304e2, type: 2}
+  - {fileID: 11400000, guid: 1cc96f5b7fef547499cfc3560d55a181, type: 2}
+  - {fileID: 11400000, guid: bd94930e943387341863183d35a63e4b, type: 2}
+  - {fileID: 11400000, guid: b8706ad714410004f8be8b865a97d16d, type: 2}
+  - {fileID: 11400000, guid: b43594322dbf4ff4bbbd19b37eb6d606, type: 2}
+  stairTile: {fileID: 11400000, guid: 3c1a7ca3dec3ebf469112a845f8e50b2, type: 2}
+--- !u!4 &102306237
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 102306235}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!21 &106223975
 Material:
   serializedVersion: 8
@@ -400,7 +454,9 @@ MonoBehaviour:
   elevationDeg: 35
   startAngleDeg: 45
   sensitivity: 0.4
-  orthoSize: 6
+  elevationSensitivity: 0.3
+  elevationMin: 5
+  elevationMax: 85
   zoomSpeed: 100
   zoomMin: 2
   zoomMax: 14
@@ -558,8 +614,8 @@ MonoBehaviour:
   cellSize: 1
   cellGap: 0.08
   emptyHeight: 0.08
-  placedHeight: 0.4
-  emptyColor: {r: 0.18, g: 0.18, b: 0.22, a: 1}
+  placedHeight: 1
+  emptyColor: {r: 0.2990388, g: 0.2990388, b: 0.3018868, a: 0.3019608}
 --- !u!4 &415719700
 Transform:
   m_ObjectHideFlags: 0
@@ -764,6 +820,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   grid: {fileID: 0}
   floorManager: {fileID: 90098956}
+  meshLibrary: {fileID: 102306236}
   availableTiles:
   - {fileID: 11400000, guid: 155296910202839418601f7036fa1577, type: 2}
   - {fileID: 11400000, guid: dbcb718519a286f4f9b8fac6c2c7244c, type: 2}
@@ -802,3 +859,4 @@ SceneRoots:
   - {fileID: 738224378}
   - {fileID: 1838939325}
   - {fileID: 90098957}
+  - {fileID: 102306237}

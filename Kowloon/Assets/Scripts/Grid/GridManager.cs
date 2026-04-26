@@ -4,7 +4,12 @@ using UnityEngine.InputSystem;
 /// <summary>
 /// Owns the NxN grid: builds base cell visuals, tracks occupied state,
 /// and exposes an API for TilePlacer to query and modify.
-/// Does NOT handle tile selection or placement logic — that lives in TilePlacer.
+///
+/// Two cell layers:
+///   Bottom (_cells)   — sits at baseY; shows preview for UNOCCUPIED cells.
+///   Top    (_topCells) — sits at baseY + placedHeight; normally invisible,
+///                        shows preview for OCCUPIED cells so highlights aren't
+///                        hidden behind placed tile blocks.
 /// </summary>
 public class GridManager : MonoBehaviour
 {
@@ -18,7 +23,7 @@ public class GridManager : MonoBehaviour
     public float placedHeight = 0.4f;
 
     [Header("Colours")]
-    public Color emptyColor = new Color(0.18f, 0.18f, 0.22f);
+    public Color emptyColor = new Color(0.18f, 0.18f, 0.22f, 0.55f);
 
     // ── derived helpers ───────────────────────────────────────────────────────
 
@@ -27,10 +32,15 @@ public class GridManager : MonoBehaviour
 
     // ── internal ──────────────────────────────────────────────────────────────
 
+    private static readonly Color Invisible = new Color(0f, 0f, 0f, 0f);
+
     private float         _baseY;
     private bool[,]       _occupied;
+    private bool[,]       _prevOccupied;
     private GameObject[,] _cells;
     private Material[,]   _mats;
+    private GameObject[,] _topCells;
+    private Material[,]   _topMats;
     private Camera        _cam;
 
     // ── public properties ─────────────────────────────────────────────────────
@@ -45,10 +55,18 @@ public class GridManager : MonoBehaviour
 
     void Awake()
     {
-        _cam      = Camera.main;
-        _occupied = new bool[gridSize, gridSize];
-        _cells    = new GameObject[gridSize, gridSize];
-        _mats     = new Material[gridSize, gridSize];
+        _cam          = Camera.main;
+        _occupied     = new bool[gridSize, gridSize];
+        _prevOccupied = new bool[gridSize, gridSize];
+        _cells        = new GameObject[gridSize, gridSize];
+        _mats         = new Material[gridSize, gridSize];
+        _topCells     = new GameObject[gridSize, gridSize];
+        _topMats      = new Material[gridSize, gridSize];
+
+        for (int x = 0; x < gridSize; x++)
+        for (int z = 0; z < gridSize; z++)
+            _prevOccupied[x, z] = true;
+
         BuildGrid();
     }
 
@@ -57,47 +75,89 @@ public class GridManager : MonoBehaviour
         for (int x = 0; x < gridSize; x++)
         for (int z = 0; z < gridSize; z++)
         {
-            var pos  = new Vector3(Origin + x * Step, _baseY + emptyHeight * 0.5f, Origin + z * Step);
+            float xw = Origin + x * Step;
+            float zw = Origin + z * Step;
+
+            // ── bottom cell ───────────────────────────────────────────────────
             var cell = GameObject.CreatePrimitive(PrimitiveType.Cube);
             cell.name = $"Cell_{x}_{z}";
             cell.transform.SetParent(transform, false);
-            cell.transform.position   = pos;
+            cell.transform.position   = new Vector3(xw, _baseY + emptyHeight * 0.5f, zw);
             cell.transform.localScale = new Vector3(cellSize, emptyHeight, cellSize);
 
             var mat = new Material(Shader.Find("Universal Render Pipeline/Unlit"));
+            MakeTransparent(mat);
             mat.color = emptyColor;
             cell.GetComponent<Renderer>().material = mat;
 
             _cells[x, z] = cell;
             _mats[x, z]  = mat;
+
+            // ── top cell (invisible overlay on top of placed tiles) ───────────
+            var top = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            top.name = $"TopCell_{x}_{z}";
+            top.transform.SetParent(transform, false);
+            top.transform.position   = new Vector3(xw, _baseY + placedHeight + emptyHeight * 0.5f, zw);
+            top.transform.localScale = new Vector3(cellSize, emptyHeight, cellSize);
+
+            // Top cells don't need colliders — mouse detection uses plane raycasting
+            Destroy(top.GetComponent<Collider>());
+
+            var topMat = new Material(Shader.Find("Universal Render Pipeline/Unlit"));
+            MakeTransparent(topMat);
+            topMat.color = Invisible;
+            top.GetComponent<Renderer>().material = topMat;
+
+            _topCells[x, z] = top;
+            _topMats[x, z]  = topMat;
         }
+    }
+
+    // ── material helpers ──────────────────────────────────────────────────────
+
+    static void MakeTransparent(Material mat)
+    {
+        mat.SetFloat("_Surface",  1f);
+        mat.SetFloat("_Blend",    0f);
+        mat.SetFloat("_SrcBlend", 5f);
+        mat.SetFloat("_DstBlend", 10f);
+        mat.SetFloat("_ZWrite",   0f);
+        mat.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+        mat.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
     }
 
     // ── floor transition API ──────────────────────────────────────────────────
 
-    /// <summary>Repositions the empty grid cells to sit on top of the given Y level.</summary>
     public void MoveTo(float newY)
     {
         _baseY = newY;
         for (int x = 0; x < gridSize; x++)
         for (int z = 0; z < gridSize; z++)
         {
-            var pos = _cells[x, z].transform.position;
-            pos.y   = _baseY + emptyHeight * 0.5f;
-            _cells[x, z].transform.position = pos;
+            var p = _cells[x, z].transform.position;
+            p.y = _baseY + emptyHeight * 0.5f;
+            _cells[x, z].transform.position = p;
+
+            var tp = _topCells[x, z].transform.position;
+            tp.y = _baseY + placedHeight + emptyHeight * 0.5f;
+            _topCells[x, z].transform.position = tp;
         }
     }
 
-    /// <summary>Clears occupied state and resets all cell colours for a fresh floor.</summary>
     public void ClearOccupied()
     {
         for (int x = 0; x < gridSize; x++)
         for (int z = 0; z < gridSize; z++)
         {
-            _occupied[x, z]    = false;
-            _mats[x, z].color  = emptyColor;
+            _prevOccupied[x, z] = _occupied[x, z];
+            _occupied[x, z]     = false;
+            _mats[x, z].color    = emptyColor;
+            _topMats[x, z].color = Invisible;
         }
     }
+
+    public bool WasPrevOccupied(int x, int z) =>
+        IsInBounds(x, z) && _prevOccupied[x, z];
 
     // ── query / mutation API ──────────────────────────────────────────────────
 
@@ -122,13 +182,27 @@ public class GridManager : MonoBehaviour
 
     public void MarkOccupied(int x, int z) => _occupied[x, z] = true;
 
-    public void SetCellPreview(int x, int z, Color c)  { if (IsInBounds(x, z)) _mats[x, z].color = c; }
-    public void ResetCellColor(int x, int z)           { if (IsInBounds(x, z)) _mats[x, z].color = emptyColor; }
-
     /// <summary>
-    /// Returns the grid cell under the mouse by raycasting against the current
-    /// floor plane. Works correctly even when tall placed-tile cubes are in the way.
+    /// Sets the preview colour for cell (x, z).
+    /// Occupied cells are highlighted on the top layer; unoccupied on the bottom.
     /// </summary>
+    public void SetCellPreview(int x, int z, Color c)
+    {
+        if (!IsInBounds(x, z)) return;
+        if (_occupied[x, z])
+            _topMats[x, z].color = c;
+        else
+            _mats[x, z].color = c;
+    }
+
+    /// <summary>Resets both layers to their resting state.</summary>
+    public void ResetCellColor(int x, int z)
+    {
+        if (!IsInBounds(x, z)) return;
+        _mats[x, z].color    = emptyColor;
+        _topMats[x, z].color = Invisible;
+    }
+
     public bool TryGetMouseCell(out Vector2Int cell)
     {
         cell  = new(-1, -1);
@@ -145,7 +219,6 @@ public class GridManager : MonoBehaviour
         return true;
     }
 
-    /// <summary>Returns the world-space position of cell (x, z) at the current floor's base Y.</summary>
     public Vector3 CellToWorld(int x, int z) =>
         new Vector3(Origin + x * Step, _baseY, Origin + z * Step);
 }

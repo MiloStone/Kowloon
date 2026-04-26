@@ -11,6 +11,7 @@ public class TilePlacer : MonoBehaviour
     [Header("References")]
     public GridManager      grid;
     public FloorManager     floorManager;
+    public TileMeshLibrary  meshLibrary;
     public TileDefinition[] availableTiles;
 
     [Header("Special Tiles")]
@@ -39,6 +40,7 @@ public class TilePlacer : MonoBehaviour
     {
         if (grid         == null) grid         = FindFirstObjectByType<GridManager>();
         if (floorManager == null) floorManager = FindFirstObjectByType<FloorManager>();
+        if (meshLibrary  == null) meshLibrary  = FindFirstObjectByType<TileMeshLibrary>();
     }
 
     void Start() => PickNextTile();
@@ -126,7 +128,7 @@ public class TilePlacer : MonoBehaviour
         ClearPreview();
 
         foreach (var c in cells) grid.MarkOccupied(c.x, c.y);
-        SpawnVisual(cells, _tile);
+        SpawnVisual(_tile, anchor);
         PickNextTile();
 
         if (wasStair) floorManager?.CompleteFloor();
@@ -161,53 +163,60 @@ public class TilePlacer : MonoBehaviour
 
     bool IsValidPlacement(List<Vector2Int> cells)
     {
-        bool isFirst = !grid.HasAnyOccupied();
-        bool hasAdj  = false;
+        bool isFirst       = !grid.HasAnyOccupied();
+        bool hasAdj        = false;
+        bool hasStackBelow = false;
 
         foreach (var c in cells)
         {
-            if (!grid.IsInBounds(c.x, c.y))                      return false;
-            if (grid.IsOccupied(c.x, c.y))                        return false;
-            if (!isFirst && grid.HasAdjacentOccupied(c.x, c.y))  hasAdj = true;
+            if (!grid.IsInBounds(c.x, c.y))                       return false;
+            if (grid.IsOccupied(c.x, c.y))                         return false;
+            if (!isFirst && grid.HasAdjacentOccupied(c.x, c.y))   hasAdj        = true;
+            if (grid.WasPrevOccupied(c.x, c.y))       hasStackBelow = true;
         }
 
-        return isFirst || hasAdj;
+        return hasStackBelow && (isFirst || hasAdj);
     }
 
     // ── visual spawning ───────────────────────────────────────────────────────
 
-    void SpawnVisual(List<Vector2Int> cells, TileDefinition tile)
+    void SpawnVisual(TileDefinition tile, Vector2Int anchor)
     {
-        var   cellSet = new HashSet<Vector2Int>(cells);
-        float cSize   = grid.CellSize;
-        float cGap    = grid.CellGap;
-        float height  = grid.PlacedHeight;
-
-        var parent = new GameObject($"Tile_{tile.displayName}");
-
-        foreach (var c in cells)
+        if (!meshLibrary.TryGetMeshes(tile, out Mesh bodyMesh, out Mesh topMesh))
         {
-            // CellToWorld returns the floor's base Y; add half the tile height to centre it
-            Vector3 pos = grid.CellToWorld(c.x, c.y);
-            pos.y += height * 0.5f;
-
-            float extX = 0f, offX = 0f;
-            float extZ = 0f, offZ = 0f;
-
-            if (cellSet.Contains(new(c.x + 1, c.y))) { extX += cGap / 2f; offX += cGap / 4f; }
-            if (cellSet.Contains(new(c.x - 1, c.y))) { extX += cGap / 2f; offX -= cGap / 4f; }
-            if (cellSet.Contains(new(c.x, c.y + 1))) { extZ += cGap / 2f; offZ += cGap / 4f; }
-            if (cellSet.Contains(new(c.x, c.y - 1))) { extZ += cGap / 2f; offZ -= cGap / 4f; }
-
-            var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            cube.name = $"Cell_{c.x}_{c.y}";
-            cube.transform.SetParent(parent.transform, false);
-            cube.transform.position   = pos + new Vector3(offX, 0f, offZ);
-            cube.transform.localScale = new Vector3(cSize + extX, height, cSize + extZ);
-
-            var mat = new Material(Shader.Find("Universal Render Pipeline/Unlit"));
-            mat.color = tile.color;
-            cube.GetComponent<Renderer>().material = mat;
+            Debug.LogWarning($"TileMeshLibrary: no cached mesh for {tile.displayName}");
+            return;
         }
+
+        var root = new GameObject($"Tile_{tile.displayName}");
+        root.transform.position = grid.CellToWorld(anchor.x, anchor.y);
+        root.transform.rotation = Quaternion.Euler(0f, _rotation * 90f, 0f);
+
+        var bodyGo = new GameObject("Body");
+        bodyGo.transform.SetParent(root.transform, false);
+        var bodyMf = bodyGo.AddComponent<MeshFilter>();
+        var bodyMr = bodyGo.AddComponent<MeshRenderer>();
+        bodyMf.sharedMesh     = bodyMesh;
+        bodyMr.sharedMaterial = meshLibrary.SolidMaterial;
+        var bodyMpb = new MaterialPropertyBlock();
+        bodyMpb.SetColor("_BaseColor", tile.color);
+        bodyMr.SetPropertyBlock(bodyMpb);
+
+        var topGo = new GameObject("TopCap");
+        topGo.transform.SetParent(root.transform, false);
+        var topMf = topGo.AddComponent<MeshFilter>();
+        var topMr = topGo.AddComponent<MeshRenderer>();
+        topMf.sharedMesh     = topMesh;
+        topMr.sharedMaterial = meshLibrary.TopMaterial;
+        var topMpb = new MaterialPropertyBlock();
+        topMpb.SetColor("_BaseColor", new Color(tile.color.r, tile.color.g, tile.color.b, 0.05f));
+        topMr.SetPropertyBlock(topMpb);
+
+        var placed = root.AddComponent<PlacedTile>();
+        placed.bodyRenderer = bodyMr;
+        placed.topRenderer  = topMr;
+        placed.tileColor    = tile.color;
+
+        floorManager?.RegisterPlacedTile(placed);
     }
 }
