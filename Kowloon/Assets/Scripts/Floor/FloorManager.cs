@@ -57,7 +57,10 @@ public class FloorManager : MonoBehaviour
     public void CompleteFloor()
     {
         foreach (var tile in _currentFloorTiles)
+        {
+            tile.SealAllClosedDoors();
             tile.RevealTop();
+        }
         _currentFloorTiles.Clear();
         _graph.Clear();
 

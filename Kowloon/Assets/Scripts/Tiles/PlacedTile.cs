@@ -106,6 +106,19 @@ public class PlacedTile : MonoBehaviour
         if (topRenderer != null) topRenderer.gameObject.SetActive(true);
     }
 
+    /// <summary>
+    /// Seal every still-closed door on this tile (called when the floor finishes).
+    /// Doors that connected to a neighbour are already open and untouched.
+    /// </summary>
+    public void SealAllClosedDoors()
+    {
+        for (int i = 0; i < Doors.Length; i++)
+        {
+            if (!Doors[i].IsOpen && Doors[i].Overlay != null)
+                SealDoor(i);
+        }
+    }
+
     public static Vector2Int RotateOffset(Vector2Int v, int steps)
     {
         for (int i = 0; i < steps; i++)
