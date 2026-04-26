@@ -29,6 +29,8 @@ public class ContractPanel : MonoBehaviour
     [Range(0.15f, 0.5f)] public float widthFraction = 0.25f;
     [Tooltip("Left edge inset as a fraction of screen width.")]
     [Range(0.0f, 0.1f)]  public float leftInsetFraction = 0.02f;
+    [Tooltip("Shrinks the bubble's 9-slice borders. Higher = smaller corners.")]
+    [Range(0.5f, 16f)]   public float bubblePixelsPerUnitMultiplier = 4f;
 
     [Header("Style")]
     public string titleText        = "CONTRACT";
@@ -91,9 +93,11 @@ public class ContractPanel : MonoBehaviour
         bubbleRt.sizeDelta = new Vector2(widthFraction * 1920f, 200f);
 
         var bubbleImg = bubbleGo.GetComponent<Image>();
-        bubbleImg.sprite = bubbleSprite;
-        bubbleImg.type   = Image.Type.Sliced;
-        bubbleImg.preserveAspect = false;
+        bubbleImg.sprite                  = bubbleSprite;
+        bubbleImg.type                    = Image.Type.Sliced;
+        bubbleImg.preserveAspect          = false;
+        bubbleImg.pixelsPerUnitMultiplier = bubblePixelsPerUnitMultiplier;
+        bubbleImg.raycastTarget           = false;
 
         var vlg = bubbleGo.GetComponent<VerticalLayoutGroup>();
         vlg.padding = padding;
