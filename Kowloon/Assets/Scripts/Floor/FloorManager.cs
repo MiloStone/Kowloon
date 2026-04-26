@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -18,6 +19,8 @@ public class FloorManager : MonoBehaviour
 
     public int CurrentFloor { get; private set; } = 1;
 
+    private readonly List<PlacedTile> _currentFloorTiles = new();
+
     // ── lifecycle ─────────────────────────────────────────────────────────────
 
     void Reset()
@@ -37,8 +40,14 @@ public class FloorManager : MonoBehaviour
 
     // ── public API ────────────────────────────────────────────────────────────
 
+    public void RegisterPlacedTile(PlacedTile tile) => _currentFloorTiles.Add(tile);
+
     public void CompleteFloor()
     {
+        foreach (var tile in _currentFloorTiles)
+            tile.RevealTop();
+        _currentFloorTiles.Clear();
+
         CurrentFloor++;
         float newY = (CurrentFloor - 1) * grid.PlacedHeight;
 
