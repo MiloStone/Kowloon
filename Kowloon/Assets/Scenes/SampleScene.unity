@@ -176,6 +176,10 @@ MonoBehaviour:
     m_PostInfinity: 2
     m_RotationOrder: 4
   floorGap: 0.01
+  rippleBounceDuration: 0.2
+  rippleBounceHeight: 0.3
+  rippleStepDelay: 0.05
+  ripplePostDelay: 0.15
 --- !u!4 &90098957
 Transform:
   m_ObjectHideFlags: 0
@@ -681,7 +685,7 @@ MonoBehaviour:
   cellGap: 0.08
   emptyHeight: 0.08
   placedHeight: 1
-  emptyColor: {r: 0.2990388, g: 0.2990388, b: 0.3018868, a: 0.3019608}
+  emptyColor: {r: 0.07191171, g: 0.07191171, b: 0.0754717, a: 0.5254902}
   emptyColorOverVoid: {r: 0.18, g: 0.18, b: 0.22, a: 0.2}
 --- !u!4 &415719700
 Transform:
@@ -902,6 +906,19 @@ MonoBehaviour:
   anchorWhiteLerp: 0.35
   doorIndicatorColor: {r: 1, g: 0.85, b: 0.2, a: 1}
   doorIndicatorInsetFraction: 0.125
+  dropDuration: 0.4
+  dropHeightCells: 1
+  placeChime: {fileID: 8300000, guid: 0713db855286c464787670ce82f60697, type: 3}
+  placeChimeVolume: 0.441
+  pitchSemitones:
+  - 0
+  - 4
+  - 6
+  - 9
+  - 11
+  - 14
+  transposeSemitones: -2
+  pitchCooldown: 2
 --- !u!4 &1838939325
 Transform:
   m_ObjectHideFlags: 0

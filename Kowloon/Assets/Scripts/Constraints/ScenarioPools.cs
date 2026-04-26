@@ -15,7 +15,7 @@ public static class ScenarioPools
             new MaxDegreeAtLeast(3)),
         new Scenario("Easy B",
             new AtLeastNRooms(7),
-            new MinimumSizeSuites(2, 2, 2)),
+            new MinimumSizeSuites(2, 3)),
         new Scenario("Easy C",
             new AtLeastNRooms(6),
             new AtLeastNIsolatedRooms(2)),
